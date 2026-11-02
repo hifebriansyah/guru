@@ -6,6 +6,26 @@ const BASE = import.meta.env.BASE_URL;
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 48 48" aria-hidden="true" className={className}>
+      {/* A soft shadow (--logo-line) around the shape: the shape grown by 1px (the spread), blurred by 1px, behind itself. The page logo is
+          1.4em wide at 3.2rem (72px: 1.5px per unit) and at 1.6rem once a question is asked (36px: 0.75px per unit); the numbers are in
+          units: spread 0.67 / 1.34, blur 0.67 / 1.34. styles/app.css picks one. */}
+      <defs>
+        {[
+          ["logo-line-big", 0.67, 0.67],
+          ["logo-line-small", 1.34, 1.34],
+        ].map(([id, spread, blur]) => (
+          <filter key={id} id={String(id)} x="-60%" y="-60%" width="220%" height="220%" colorInterpolationFilters="sRGB">
+            <feMorphology in="SourceAlpha" operator="dilate" radius={Number(spread)} result="grown" />
+            <feGaussianBlur in="grown" stdDeviation={Number(blur)} result="soft" />
+            <feFlood style={{ floodColor: "var(--logo-line)" }} floodOpacity="0.5" result="colour" />
+            <feComposite in="colour" in2="soft" operator="in" result="line" />
+            <feMerge>
+              <feMergeNode in="line" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        ))}
+      </defs>
       <mask id="gcut">
         <rect width="48" height="48" fill="#fff" />
         <path d="M24 24 L48 8.5 V24.33 H24 Z" fill="#000" />
@@ -34,7 +54,7 @@ export function Logo({ onClick, className }: { onClick?: () => void; className?:
         }}
       >
         <LogoMark />
-        Guru
+        <span className="logo-name">Guru</span>
       </a>
     </h1>
   );

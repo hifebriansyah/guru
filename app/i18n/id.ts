@@ -27,6 +27,7 @@ const id: { [K in keyof typeof en]: (typeof en)[K] } = {
   dismiss: "Tutup",
   settings: "Pengaturan",
   disclaimer: [
+    ["Peringatan", "AI bisa salah menjawab. Semua jawaban di sini ditulis oleh AI, dan AI bisa salah mengutip teks, mencampuradukkan detail, atau terdengar lebih yakin daripada seharusnya.\n\nJangan gunakan platform ini untuk mencari kebenaran 100%. Selalu periksa ulang informasi dari AI dengan sumber lain."],
     ["Guru Aktif", "Secara default, ajaran (‑isme) dinonaktifkan. Ini bukan soal memihak satu kelompok dibanding yang lain, melainkan keputusan praktis untuk mengatur penggunaan token dan menjaga konsistensi.\n\nSeiring proyek ini berkembang, dan ketika anggaran kami lebih besar atau minat pada ajaran (‑isme) meningkat, kami pasti akan mempertimbangkan kembali untuk mengaktifkannya secara default."],
     ["Urutan Guru", "Secara default, guru ditampilkan menurut popularitasnya di Indonesia. Kami mungkin menghadirkan kemampuan untuk mengatur urutannya di masa depan."],
     ["Abimisme", "Ajaran ini disertakan murni untuk hiburan. Kami paham ini mungkin bukan selera semua orang, tetapi kami mohon pengertiannya. Semoga, sedikit humor dapat memberikan senyuman!"],

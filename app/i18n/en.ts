@@ -28,6 +28,7 @@ const en = {
   dismiss: "Dismiss",
   settings: "Settings",
   disclaimer: [
+    ["Warning", "AI can give wrong answers. Everything here is written by AI, and AI can misquote a text, mix up details, or sound surer than it should.\n\nDo not use this platform to find a 100% certain truth. Always double-check what the AI tells you against other sources."],
     ["Default Active Gurus", "By default, teachings (the ‑isms) are disabled. This isn't about favouring one group over another; it's simply a practical decision to manage token usage and maintain consistency.\n\nAs the project grows, and we have a larger budget or see greater interest in the teachings (‑isms), we'll certainly reconsider enabling them by default."],
     ["Default Guru Order", "By default, gurus are listed according to their popularity in Indonesia. We may introduce the ability to customise their order in the future."],
     ["Abism", "This teaching is included purely for fun. We understand that it might not be everyone's cup of tea, but we kindly ask you to respect our decision to include it. After all, a little humour never hurts!"],

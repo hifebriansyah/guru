@@ -23,6 +23,7 @@
   --text: #1b2556; --muted: #3871a8; --link: #233e86; --focus: #2194b8; --error: #b3261e;
   --button: #2194b8; --button-text: #fff; /* the same colour as the menu switches */
   --logo-text: #404040; /* the name next to the logo on the light theme */
+  --logo-line: #808080; /* the soft shadow around the logo */
   /* one colour per teacher, in the order of the rings */
   --r1: #1b2556; --r2: #233e86; --r3: #3871a8; --r4: #2194b8; --r5: #77c4cf; --r6: #aad9e9; --r7: #f2b84b;
 }
@@ -72,7 +73,11 @@
 .logo { view-transition-name: logo; margin: 0 0 28px; display: flex; align-items: center; justify-content: center; gap: .25em; font-size: 3.2rem; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
 .asked .logo { margin-bottom: 16px; font-size: 1.6rem; }
 .logo a { display: flex; align-items: center; gap: .25em; color: var(--logo-text); text-decoration: none; }
-.logo svg { width: 1.4em; height: 1.4em; flex: none; border-radius: 50%; }
+.logo svg { width: 1.4em; height: 1.4em; flex: none; border-radius: 50%; overflow: visible; filter: url(#logo-line-big); }
+.asked .logo svg { filter: url(#logo-line-small); }
+/* the same soft shadow on the name: spread 1px (the four 1px offsets), blur 1px, the colour of the logo's shadow */
+.logo-name { text-shadow: 1px 0 1px color-mix(in srgb, var(--logo-line) 30%, transparent), -1px 0 1px color-mix(in srgb, var(--logo-line) 30%, transparent), 0 1px 1px color-mix(in srgb, var(--logo-line) 30%, transparent), 0 -1px 1px color-mix(in srgb, var(--logo-line) 30%, transparent); }
+/* a soft shadow around the logo, spread 1px (the filters are in components/Logo.tsx: they grow the shape by 1px at each size, then blur it) */
 ::view-transition-group(*) { animation-duration: .5s; animation-timing-function: cubic-bezier(.2, .8, .2, 1); }
 
 /* the box: the question grows with its text, the settings and send buttons sit inside on the right */
