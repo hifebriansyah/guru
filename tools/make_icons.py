@@ -49,8 +49,20 @@ def draw(size: int, padding: float = 0.0, background: str | None = None) -> Imag
 
 
 FONT = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
-FONT_TEXT = "/System/Library/Fonts/Supplemental/Arial.ttf"
+FONT_TEXT = ("/System/Library/Fonts/HelveticaNeue.ttc", 12)  # Helvetica Neue Thin (face 12 of the collection)
 TAGLINE = ["Ask Gurus", "Their Perspectives"]  # two lines, the first letter of each word in capital
+
+
+TRACKING = 8  # extra pixels between the letters of the tagline
+
+
+def tracked(d: ImageDraw.ImageDraw, text: str, cx: float, baseline: float, font: ImageFont.FreeTypeFont, fill: str, spacing: float) -> None:
+    """Draws `text` centred on cx with `spacing` extra pixels between the letters."""
+    widths = [font.getlength(c) for c in text]
+    x = cx - (sum(widths) + spacing * (len(text) - 1)) / 2
+    for c, cw in zip(text, widths):
+        d.text((x, baseline), c, font=font, fill=fill, anchor="ls")
+        x += cw + spacing
 
 
 def og_image() -> Image.Image:
@@ -64,11 +76,11 @@ def og_image() -> Image.Image:
     d.ellipse([260, 420, 900, 900], fill="#13404c")
     img = Image.blend(img, blobs.filter(ImageFilter.GaussianBlur(120)), 0.75)
     logo = draw(280)
-    img.paste(logo, ((w - 280) // 2, 78), logo)
+    img.paste(logo, ((w - 280) // 2, 96), logo)
     d = ImageDraw.Draw(img)
-    tag = ImageFont.truetype(FONT, 54)
+    tag = ImageFont.truetype(FONT_TEXT[0], 54, index=FONT_TEXT[1])
     for i, line in enumerate(TAGLINE):
-        d.text((w // 2, 444 + i * 76), line, font=tag, fill="#e8f4f6", anchor="ms")
+        tracked(d, line, w // 2, 462 + i * 62, tag, "#e8f4f6", TRACKING)
     return img
 
 
