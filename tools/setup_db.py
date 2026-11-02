@@ -103,8 +103,9 @@ def main():
     for t in personas():  # one column per teacher; ids are file names (islam, protestant...), checked here so they are safe as column names
         if not t["id"].isidentifier():
             sys.exit(f"teacher id '{t['id']}' cannot be a column name")
-        # <id> holds the answer (NULL = not asked yet); <id>_answerable the screener's verdict: 1 = that tradition can answer, 0 = it cannot (SQLite has no boolean)
-        for col, kind in ((t["id"], "TEXT"), (f'{t["id"]}_answerable', "INTEGER")):
+        # <id> holds the answer (NULL = not asked yet); <id>_answerable the screener's verdict: 1 = that tradition can answer, 0 = it cannot (SQLite has no boolean);
+        # <id>_at when that answer was saved (UTC, like created_at)
+        for col, kind in ((t["id"], "TEXT"), (f'{t["id"]}_answerable', "INTEGER"), (f'{t["id"]}_at', "TEXT")):
             if col not in have:
                 query(account, token, db_id, f'ALTER TABLE answer ADD COLUMN "{col}" {kind}', f"Adding column {col}")
                 print(f"Added column {col}")

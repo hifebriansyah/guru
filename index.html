@@ -54,7 +54,7 @@
     form, .answer, .menu { background: var(--surface); box-shadow: var(--shadow); }  /* no borders: the shadow draws the edge */
     /* Like a search page: before the first question only the logo and the box, in the middle of the screen. After it (body.asked)
        they move to the top and shrink, and the answers come in below. */
-    main { width: 100%; max-width: 680px; margin: 0 auto; min-height: calc(100vh - 150px); min-height: calc(100dvh - 150px); display: flex; flex-direction: column; justify-content: center; }
+    main { width: 100%; max-width: 840px; margin: 0 auto; min-height: calc(100vh - 150px); min-height: calc(100dvh - 150px); display: flex; flex-direction: column; justify-content: center; }
     body.asked main { justify-content: flex-start; min-height: 0; }
     h1 { view-transition-name: logo; }
     form { view-transition-name: box; }
@@ -63,6 +63,7 @@
       margin: 0 0 28px; display: flex; align-items: center; justify-content: center; gap: .25em;
       font-size: 3.2rem; font-weight: 700; letter-spacing: -.03em; line-height: 1;
     }
+    h1 a { display: flex; align-items: center; gap: .25em; color: inherit; text-decoration: none; }
     h1 svg { width: 1.4em; height: 1.4em; flex: none; border-radius: 50%; }
     body.asked h1 { margin-bottom: 16px; font-size: 1.6rem; }
     /* on the dark page the navy outer rings would vanish: the logo sits on a light disc instead */
@@ -91,10 +92,11 @@
     svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .menu-wrap { display: contents; }  /* the menu hangs from the whole box, not from the button */
     .menu {
-      position: absolute; right: 0; top: calc(100% + 8px); z-index: 10; width: 260px; display: grid; gap: 10px; padding: 12px;
+      position: absolute; right: 0; top: calc(100% + 8px); z-index: 10; width: 100%; max-width: 480px; display: grid;  /* as wide as the question box, but at most 480px */ gap: 10px; padding: 12px;
       border-radius: 22px;
     }
     .menu[hidden] { display: none; }
+    @media (max-width: 600px) { .menu { max-width: none; } }  /* on a small screen the menu is as wide as the box */
     .menu hr { width: 100%; margin: 0; border: 0; border-top: 1px solid var(--line); }
     .menu button { font-weight: 600; }
     .segs { display: flex; gap: 8px; }  /* theme and language on one line */
@@ -103,6 +105,11 @@
     .seg button { height: 32px; display: grid; place-items: center; border-radius: 999px; color: var(--muted); font-size: .85rem; }
     .seg button svg.i { width: 18px; height: 18px; }
     .seg button[aria-pressed="true"] { background: var(--seg-on); color: var(--text); box-shadow: 0 2px 8px rgba(27, 37, 86, .15); }
+    /* the religions are flex items: always two on a line, the name and its switch side by side */
+    #teacherRows { display: flex; flex-wrap: wrap; gap: 2px 20px; }
+    #teacherRows .row { flex: 0 0 calc((100% - 40px) / 3); min-width: 0; justify-content: flex-start; gap: 8px; padding: 5px 0; font-size: .8rem; }
+    @media (max-width: 520px) { #teacherRows .row { flex-basis: calc((100% - 20px) / 2); } }  /* three would cut the names on a small phone */
+    .row > label { cursor: pointer; user-select: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 2px; font-size: .9rem; }
     .menu .switch { position: relative; flex: none; width: 46px; height: 28px; border-radius: 999px; background: var(--line); transition: background .2s; }
     .switch::after {
@@ -115,8 +122,10 @@
     .answer:hover { box-shadow: var(--shadow); }
     .note { margin: 14px 8px 0; font-size: .9rem; color: var(--muted); text-align: center; }
     .note:empty { display: none; }
-    .menu .policy-btn { width: 100%; padding: 8px 2px 4px; text-align: left; font-size: .85rem; color: var(--muted); transition: color .2s; }
-    .menu .policy-btn:hover { color: color-mix(in srgb, var(--muted) 65%, #000); }
+    /* the privacy policy: an icon on the row of the theme and language switchers */
+    .menu .policy-btn { flex: none; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 999px; background: var(--line); color: var(--muted); transition: background .2s, box-shadow .2s; }
+    .menu .policy-btn svg.i { width: 18px; height: 18px; }
+    .menu .policy-btn:hover { background: var(--seg-on); box-shadow: 0 2px 8px rgba(27, 37, 86, .15); }  /* the text stays; the pill lights up like the active switcher */
     dialog.policy { width: min(560px, calc(100vw - 32px)); max-height: min(80vh, 640px); padding: 0; border-radius: 20px; color: var(--text); background: var(--surface); border: 0; box-shadow: 0 8px 24px rgba(0, 0, 0, .18), 0 24px 80px rgba(0, 0, 0, .35); }  /* always shadowed; the backdrop is light enough for it to show */
     dialog.policy[open] { display: flex; flex-direction: column; overflow: hidden; }  /* the head stays, only the body scrolls */
     dialog.policy::backdrop { background: rgba(10, 27, 34, .28); }
@@ -164,6 +173,7 @@
 <body>
   <main>
     <h1>
+      <a href="./" aria-label="Guru">  <!-- back to the empty page: the folder of this page, also from the address of a question -->
         <!-- the logo (logo.png): three rings, the top-right cut out like a G -->
         <svg viewBox="0 0 48 48" aria-hidden="true">
           <mask id="gcut"><rect width="48" height="48" fill="#fff"/><path d="M24 24 L48 8.5 V24.33 H24 Z" fill="#000"/></mask>
@@ -175,7 +185,8 @@
           <rect x="23.1" y="24.33" width="8" height="3.02" fill="#aad9e9"/>
         </svg>
         Guru
-      </h1>
+      </a>
+    </h1>
     <form id="ask">
       <label for="question" hidden data-t="label">Your question</label>
       <textarea id="question" name="question" rows="1" maxlength="500" required data-tp="placeholder" placeholder="Does heaven exist?"></textarea>
@@ -193,11 +204,10 @@
             <button type="button" data-lang-set="id">ID</button>
             <button type="button" data-lang-set="en">EN</button>
           </div>
+          <button type="button" class="policy-btn" id="policyBtn" data-ta="policyBtn" data-tl="policyBtn" aria-label="Privacy policy"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg></button>
           </div>
           <hr>
           <div id="teacherRows" role="group" data-ta="teachers" aria-label="Teachers"></div>
-          <hr>
-          <button type="button" class="policy-btn" id="policyBtn" data-t="policyBtn">Privacy policy</button>
         </div>
       </div>
       <button type="submit" class="icon send" id="send" data-ta="ask" aria-label="Ask" disabled>
@@ -296,6 +306,7 @@
       for (const el of document.querySelectorAll("[data-t]")) el.textContent = s[el.dataset.t];
       for (const el of document.querySelectorAll("[data-tp]")) el.placeholder = s[el.dataset.tp];
       for (const el of document.querySelectorAll("[data-ta]")) el.setAttribute("aria-label", s[el.dataset.ta]);
+      for (const el of document.querySelectorAll("[data-tl]")) el.title = s[el.dataset.tl];  // a tooltip for an icon without a word
       document.querySelector('meta[name="description"]').content = s.description;
       for (const b of menu.querySelectorAll("[data-lang-set]")) b.setAttribute("aria-pressed", String(b.dataset.langSet === lang));
       policyBody.replaceChildren(...s.policy.flatMap(([h, text]) => {
@@ -321,13 +332,15 @@
     for (const [id, , tradition] of TEACHERS) {
       const row = document.createElement("div");
       row.className = "row";
-      const label = document.createElement("span");
+      const label = document.createElement("label");  // a click on the name works the switch
       label.dataset.tid = id;
+      label.htmlFor = `sw-${id}`;
       const sw = document.createElement("button");
       sw.type = "button";
       sw.className = "switch";
       sw.setAttribute("role", "switch");
       sw.dataset.sid = id;
+      sw.id = `sw-${id}`;
       sw.setAttribute("aria-checked", String(!off.has(id)));
       sw.addEventListener("click", () => {
         if (off.has(id)) off.delete(id); else off.add(id);
@@ -335,7 +348,7 @@
         store.set("guru-off", JSON.stringify([...off]));
         if (off.has(id)) dropCard(id); else addCard(id);  // a question that is on the page follows the switch
       });
-      row.append(label, sw);
+      row.append(sw, label);  // the switch first, then the name
       teacherRows.append(row);
     }
 

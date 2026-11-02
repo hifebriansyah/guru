@@ -149,14 +149,15 @@ async function saveAnswer(env, row, key, id, text) {
   if (!env.DB || !PERSONAS.some((p) => p.id === id)) return;  // the id is a column name: only a known teacher's is ever used
   try {
     if (row.id) {
-      await env.DB.prepare(`UPDATE answer SET "${id}" = ?2, updated_at = datetime('now') WHERE id = ?1`).bind(row.id, text).run();
+      await env.DB.prepare(`UPDATE answer SET "${id}" = ?2, "${id}_at" = datetime('now'), updated_at = datetime('now') WHERE id = ?1`).bind(row.id, text).run();
       return;
     }
-    await env.DB.prepare(`INSERT INTO answer (question, "${id}", updated_at) VALUES (?1, ?2, datetime('now'))
-      ON CONFLICT(question) DO UPDATE SET "${id}" = excluded."${id}", updated_at = datetime('now')`).bind(key, text).run();
+    await env.DB.prepare(`INSERT INTO answer (question, "${id}", "${id}_at", updated_at) VALUES (?1, ?2, datetime('now'), datetime('now'))
+      ON CONFLICT(question) DO UPDATE SET "${id}" = excluded."${id}", "${id}_at" = datetime('now'), updated_at = datetime('now')`).bind(key, text).run();
   } catch {}
 }
 
+// Columns <id>_at: when the answer of that teacher was saved. The row has created_at and updated_at as well.
 // Column slug of table answer: the address of the question, made from its words ("apa surga itu ada?" -> "apa-surga-itu-ada"), unique, made once and kept.
 function slugify(question) {
   const s = question.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "").slice(0, 60).replace(/-+$/g, "");
