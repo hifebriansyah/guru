@@ -11,19 +11,19 @@
     /* Solid cards on soft colour blobs. Palette from the logo, dark to light: #1b2556 #233e86 #3871a8 #2194b8 #77c4cf #aad9e9. */
     :root {
       --page: #eef6fb; --blob1: rgba(170, 217, 233, .9); --blob2: rgba(119, 196, 207, .55); --blob3: rgba(56, 113, 168, .28);
-      --surface: #fff; --edge: rgba(27, 37, 86, .08); --shadow: 0 4px 20px rgba(27, 37, 86, .08);
+      --surface: #fff; --edge: rgba(27, 37, 86, .08); --shadow: 0 4px 20px rgba(27, 37, 86, .08); --shadow-focus: 0 4px 20px rgba(27, 37, 86, .18);
       --field: #f3f9fc; --line: rgba(27, 37, 86, .1); --seg-on: #fff;
       --text: #1b2556; --muted: #3871a8; --link: #233e86; --focus: #2194b8; --error: #b3261e;
-      --button: linear-gradient(180deg, #3871a8, #233e86); --button-text: #fff;
+      --button: #2194b8; --button-text: #fff;  /* the same colour as the menu switches */
       /* one colour per teacher, in the order of the rings */
       --r1: #1b2556; --r2: #233e86; --r3: #3871a8; --r4: #2194b8; --r5: #77c4cf; --r6: #aad9e9;
     }
     :root[data-theme="dark"] {
       --page: #0a1b22; --blob1: rgba(33, 148, 184, .3); --blob2: rgba(119, 196, 207, .16); --blob3: rgba(56, 113, 168, .24);
-      --surface: #12303a; --edge: rgba(170, 217, 233, .1); --shadow: 0 4px 20px rgba(0, 0, 0, .35);
+      --surface: #12303a; --edge: rgba(170, 217, 233, .1); --shadow: 0 4px 20px rgba(0, 0, 0, .35); --shadow-focus: 0 4px 20px rgba(0, 0, 0, .5);
       --field: #0e2830; --line: rgba(170, 217, 233, .12); --seg-on: rgba(119, 196, 207, .22);
       --text: #e8f4f6; --muted: #8fc9d6; --link: #8fd3e0; --focus: #77c4cf; --error: #f2a097;
-      --button: linear-gradient(180deg, #77c4cf, #2194b8); --button-text: #06222b;
+      --button: #2194b8; --button-text: #fff;
       --r1: #aad9e9; --r2: #77c4cf; --r3: #5aa6d6; --r4: #2194b8; --r5: #8fb4e8; --r6: #4fb3a9;
     }
     * { box-sizing: border-box; }
@@ -41,11 +41,14 @@
         radial-gradient(45vmax 45vmax at 30% 100%, var(--blob3), transparent 70%);
     }
     /* one look for every surface */
-    form, .answer, .menu { background: var(--surface); border: 1px solid var(--edge); box-shadow: var(--shadow); }
+    form, .answer, .menu { background: var(--surface); box-shadow: var(--shadow); }  /* no borders: the shadow draws the edge */
     /* Like a search page: before the first question only the logo and the box, in the middle of the screen. After it (body.asked)
        they move to the top and shrink, and the answers come in below. */
     main { width: 100%; max-width: 680px; margin: 0 auto; min-height: calc(100vh - 150px); min-height: calc(100dvh - 150px); display: flex; flex-direction: column; justify-content: center; }
     body.asked main { justify-content: flex-start; min-height: 0; }
+    h1 { view-transition-name: logo; }
+    form { view-transition-name: box; }
+    ::view-transition-group(*) { animation-duration: .5s; animation-timing-function: cubic-bezier(.2, .8, .2, 1); }
     h1 {
       margin: 0 0 28px; display: flex; align-items: center; justify-content: center; gap: .25em;
       font-size: 3.2rem; font-weight: 700; letter-spacing: -.03em; line-height: 1;
@@ -58,15 +61,15 @@
     :root[data-theme="dark"] h1 .ring2 { stroke: #77c4cf; }
     :root[data-theme="dark"] h1 .ring3 { stroke: #cfeaf3; }
     /* the box: the question grows with its text, the settings and send buttons sit inside on the right */
-    form { position: relative; display: flex; align-items: flex-end; gap: 4px; padding: 6px 6px 6px 22px; border-radius: 28px; transition: box-shadow .15s; }
-    form:focus-within { box-shadow: var(--shadow), 0 0 0 2px color-mix(in srgb, var(--focus) 60%, transparent); }
+    form { position: relative; display: flex; align-items: flex-end; gap: 4px; padding: 6px 6px 6px 22px; border-radius: 28px; box-shadow: none; transition: box-shadow .15s; }  /* no shadow until it is focused */
+    form:focus-within { box-shadow: var(--shadow-focus); }  /* on focus the same shadow, a bit darker: no border, no wider spread */
     textarea {
       flex: 1; min-width: 0; display: block; max-height: 40vh; margin: 0; padding: 9px 0; border: 0; outline: 0; resize: none; overflow-y: auto;
       background: transparent; color: inherit; font: inherit; line-height: 1.5;
     }
     textarea::placeholder { color: var(--muted); opacity: .7; }
     button { margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
-    button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+    button:focus-visible { outline: 0; box-shadow: 0 0 0 5px color-mix(in srgb, var(--focus) 28%, transparent); }  /* keyboard focus: a soft halo, no border */
     button.icon {
       flex: none; width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; color: var(--muted); transition: background .15s;
     }
@@ -84,6 +87,8 @@
     .menu[hidden] { display: none; }
     .menu hr { width: 100%; margin: 0; border: 0; border-top: 1px solid var(--line); }
     .menu button { font-weight: 600; }
+    .segs { display: flex; gap: 8px; }  /* theme and language on one line */
+    .segs .seg { flex: 1; }
     .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 3px; background: var(--line); border-radius: 999px; }
     .seg button { height: 32px; display: grid; place-items: center; border-radius: 999px; color: var(--muted); font-size: .85rem; }
     .seg button svg.i { width: 18px; height: 18px; }
@@ -96,10 +101,19 @@
     }
     .switch[aria-checked="true"] { background: #2194b8; }
     .switch[aria-checked="true"]::after { transform: translateX(18px); }
-    .answer { border-radius: 26px; padding: 16px; }
+    .answer { border-radius: 26px; padding: 16px; box-shadow: none; transition: box-shadow .2s; }  /* the shadow only shows on hover */
+    .answer:hover { box-shadow: var(--shadow); }
     .note { margin: 14px 8px 0; font-size: .9rem; color: var(--muted); text-align: center; }
     .note:empty { display: none; }
-    .privacy { max-width: 680px; margin: 32px auto 0; font-size: .75rem; color: var(--muted); text-align: center; opacity: .85; }
+    .menu .policy-btn { width: 100%; padding: 8px 2px 4px; text-align: left; font-size: .85rem; color: var(--muted); transition: color .2s; }
+    .menu .policy-btn:hover { color: color-mix(in srgb, var(--muted) 65%, #000); }
+    dialog.policy { width: min(560px, calc(100vw - 32px)); max-height: min(80vh, 640px); padding: 0; border-radius: 20px; color: var(--text); background: var(--surface); border: 0; box-shadow: var(--shadow), 0 20px 60px rgba(0, 0, 0, .3); }
+    dialog.policy::backdrop { background: rgba(10, 27, 34, .5); }
+    .policy-head { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; background: var(--surface); border-bottom: 1px solid var(--line); }
+    .policy-head h2 { margin: 0; font-size: 1.1rem; }
+    .policy-body { padding: 4px 20px 20px; font-size: .9rem; line-height: 1.55; }
+    .policy-body h3 { margin: 18px 0 4px; font-size: .95rem; }
+    .policy-body p { margin: 0; color: var(--muted); }
     .answers { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 12px; }
     /* each teacher's colour as a small glowing dot before the name */
     .answer { --ring: var(--r1); }
@@ -114,10 +128,21 @@
       background: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 25%, transparent);
     }
     .answer h2 small { font-weight: 400; color: var(--muted); }
-    .answer a { color: var(--link); font-weight: 600; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); text-underline-offset: 3px; }
+    .answer a { color: var(--link); font-weight: 600; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); text-underline-offset: 3px; transition: color .2s; }
+    .answer a:hover { color: color-mix(in srgb, var(--link) 65%, #000); }  /* only darker, nothing else changes */
     .answer.waiting h2::before { animation: wait 1.4s ease-in-out infinite; }
     @keyframes wait { 50% { opacity: .3; transform: scale(.7); } }
-    @media (prefers-reduced-motion: reduce) { .answer.waiting h2::before { animation: none; } }
+    /* a card rises in, one after the other, instead of popping up; its text fades in when the answer arrives */
+    .answer { animation: card-in .45s cubic-bezier(.2, .8, .2, 1) backwards; }
+    .answer:nth-child(2) { animation-delay: .06s; }
+    .answer:nth-child(3) { animation-delay: .12s; }
+    .answer:nth-child(4) { animation-delay: .18s; }
+    .answer:nth-child(5) { animation-delay: .24s; }
+    .answer:nth-child(6) { animation-delay: .3s; }
+    .answer:not(.waiting) .body { animation: fade-in .35s ease; }
+    @keyframes card-in { from { opacity: 0; transform: translateY(12px); } }
+    @keyframes fade-in { from { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .answer.waiting h2::before, .answer, .answer:not(.waiting) .body { animation: none; } }
     .answer p { margin: 0 0 8px; }
     .answer p:last-child { margin-bottom: 0; }
     .answer.waiting .body { color: var(--muted); font-style: italic; }
@@ -141,12 +166,13 @@
       </h1>
     <form id="ask">
       <label for="question" hidden data-t="label">Your question</label>
-      <textarea id="question" name="question" rows="1" maxlength="500" required data-tp="placeholder" placeholder="What does my faith say about forgiveness?"></textarea>
+      <textarea id="question" name="question" rows="1" maxlength="500" required data-tp="placeholder" placeholder="Does heaven exist?"></textarea>
       <div class="menu-wrap">
         <button type="button" class="icon" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="menu" data-ta="menu" aria-label="Settings">
           <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
         </button>
         <div class="menu" id="menu" hidden>
+          <div class="segs">
           <div class="seg" role="group" data-ta="theme" aria-label="Theme">
             <button type="button" data-theme-set="light" data-ta="light" aria-label="Light"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
             <button type="button" data-theme-set="dark" data-ta="dark" aria-label="Dark"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
@@ -155,8 +181,11 @@
             <button type="button" data-lang-set="id">ID</button>
             <button type="button" data-lang-set="en">EN</button>
           </div>
+          </div>
           <hr>
           <div id="teacherRows" role="group" data-ta="teachers" aria-label="Teachers"></div>
+          <hr>
+          <button type="button" class="policy-btn" id="policyBtn" data-t="policyBtn">Privacy policy</button>
         </div>
       </div>
       <button type="submit" class="icon send" id="send" data-ta="ask" aria-label="Ask" disabled>
@@ -166,30 +195,58 @@
     <p class="note" id="note" role="status" aria-live="polite"></p>
     <ul class="answers" id="answers" aria-live="polite"></ul>
   </main>
-  <p class="privacy" data-t="privacy">Questions and answers are kept in our log to keep the service working well. Please don't include personal details.</p>
+  <dialog class="policy" id="policy" aria-labelledby="policyTitle">
+    <div class="policy-head">
+      <h2 id="policyTitle" data-t="policyBtn">Privacy policy</h2>
+      <button type="button" class="icon" id="policyClose" data-ta="close" aria-label="Close"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </div>
+    <div class="policy-body" id="policyBody"></div>
+  </dialog>
   <script>
     const WORKER_URL = "https://guru-worker.situs.id";
     // The order the answers are shown in; the Worker sends each one as soon as it is ready.
     const TEACHERS = [
-      ["islam", "Ustadz", "Islam"], ["protestant", "Pastor", "Protestant Christianity"], ["catholic", "Father", "Catholic"],
+      ["islam", "Sheikh", "Islam"], ["protestant", "Pastor", "Protestant"], ["catholic", "Father", "Catholicism"],
       ["hinduism", "Acharya", "Hinduism"], ["buddhism", "Bhante", "Buddhism"], ["confucianism", "Laoshi", "Confucianism"],
     ];
+    // The title shown in Indonesian, where it differs from the English one.
+    const TITLE_ID = { islam: "Ustadz", protestant: "Pendeta", catholic: "Romo", hinduism: "Acarya" };
+    const titleOf = (id, title) => (lang === "id" && TITLE_ID[id]) || title;
+    // The name of the tradition shown in Indonesian (the English one is in TEACHERS).
+    const TRADITION_ID = { islam: "Islam", protestant: "Protestan", catholic: "Katolik", hinduism: "Hindu", buddhism: "Buddha", confucianism: "Khonghucu" };
+    const traditionOf = (id, tradition) => (lang === "id" && TRADITION_ID[id]) || tradition;
 
     // Text of the page in both languages. The language is only for the page: the teachers answer in the language of the question.
     const STR = {
       en: {
-        intro: "Ask one question and hear how different religions answer it.", label: "Your question", placeholder: "What does my faith say about forgiveness?", ask: "Ask",
-        privacy: "Questions and answers are kept in our log to keep the service working well. Please don't include personal details.",
+        intro: "Ask one question and hear how different religions answer it.", label: "Your question", placeholder: "Does heaven exist?", ask: "Ask",
         thinking: "Thinking…", failed: "This teacher could not answer right now.", decline: "As {title}, I can't answer that question.",
         tooMany: "Too many questions. Please wait a minute.", wrong: "Something went wrong.", none: "Switch on at least one teacher in the menu.",
+        policyBtn: "Privacy policy", close: "Close",
+        policy: [
+          ["What we keep", "Every question you ask and every answer you get is saved on our servers (a log and a database), together with your IP address, country and browser type."],
+          ["Why", "To keep the service working, to find mistakes, and to reuse an answer when someone asks the same question again, so we do not have to ask the AI twice."],
+          ["Links", "Each question gets its own page address, made from the words of the question. Anyone who has that address can read the question and its answers."],
+          ["The AI", "Your question is sent to Google's Gemini models, which write the answers. Please read Google's own policy for how it handles what it receives."],
+          ["Your device", "This page has no accounts and sets no tracking cookies. Your browser remembers only your choices (theme, language, which teachers are on)."],
+          ["Please", "Do not put personal details in your question (your name, address, phone number, health or family details). Questions are saved and may be reused."],
+        ],
         menu: "Settings", theme: "Theme", light: "Light", dark: "Dark", language: "Language", teachers: "Teachers",
         description: "Ask one question and hear how different religions answer it.",
       },
       id: {
-        intro: "Ajukan satu pertanyaan dan dengarkan bagaimana berbagai agama menjawabnya.", label: "Pertanyaanmu", placeholder: "Apa kata agamaku tentang memaafkan?", ask: "Tanya",
-        privacy: "Pertanyaan dan jawaban disimpan di log kami agar layanan tetap berjalan baik. Mohon jangan menyertakan data pribadi.",
+        intro: "Ajukan satu pertanyaan dan dengarkan bagaimana berbagai agama menjawabnya.", label: "Pertanyaanmu", placeholder: "apa surga itu ada?", ask: "Tanya",
         thinking: "Sedang berpikir…", failed: "Guru ini belum bisa menjawab sekarang.", decline: "Sebagai {title}, saya tidak dapat menjawab pertanyaan itu.",
         tooMany: "Terlalu banyak pertanyaan. Tunggu semenit.", wrong: "Terjadi kesalahan.", none: "Aktifkan setidaknya satu guru di menu.",
+        policyBtn: "Kebijakan privasi", close: "Tutup",
+        policy: [
+          ["Yang kami simpan", "Setiap pertanyaan dan jawaban disimpan di server kami (log dan basis data), bersama alamat IP, negara, dan jenis peramban kamu."],
+          ["Untuk apa", "Agar layanan tetap berjalan, untuk menemukan kesalahan, dan untuk memakai ulang jawaban bila ada yang menanyakan hal yang sama, sehingga AI tidak perlu ditanya dua kali."],
+          ["Tautan", "Setiap pertanyaan punya alamat halaman sendiri yang dibuat dari kata-kata pertanyaannya. Siapa pun yang punya alamat itu bisa membaca pertanyaan dan jawabannya."],
+          ["AI", "Pertanyaanmu dikirim ke model Gemini milik Google yang menulis jawabannya. Baca kebijakan Google sendiri untuk tahu bagaimana data itu diperlakukan."],
+          ["Perangkatmu", "Halaman ini tidak punya akun dan tidak memasang cookie pelacak. Peramban hanya mengingat pilihanmu (tema, bahasa, guru mana yang aktif)."],
+          ["Mohon", "Jangan menulis data pribadi dalam pertanyaan (nama, alamat, nomor telepon, data kesehatan atau keluarga). Pertanyaan disimpan dan bisa dipakai ulang."],
+        ],
         menu: "Pengaturan", theme: "Tema", light: "Terang", dark: "Gelap", language: "Bahasa", teachers: "Guru",
         description: "Ajukan satu pertanyaan dan dengarkan bagaimana berbagai agama menjawabnya.",
       },
@@ -208,6 +265,7 @@
     const menu = document.getElementById("menu");
     const menuBtn = document.getElementById("menuBtn");
     const teacherRows = document.getElementById("teacherRows");
+    const policy = document.getElementById("policy"), policyBody = document.getElementById("policyBody");
 
     function applyTheme(theme) {
       root.dataset.theme = theme;
@@ -222,23 +280,42 @@
       for (const el of document.querySelectorAll("[data-ta]")) el.setAttribute("aria-label", s[el.dataset.ta]);
       document.querySelector('meta[name="description"]').content = s.description;
       for (const b of menu.querySelectorAll("[data-lang-set]")) b.setAttribute("aria-pressed", String(b.dataset.langSet === lang));
+      policyBody.replaceChildren(...s.policy.flatMap(([h, text]) => {
+        const hh = document.createElement("h3"), p = document.createElement("p");
+        hh.textContent = h; p.textContent = text;
+        return [hh, p];
+      }));
+      for (const [id, , tradition] of TEACHERS) {  // the teacher rows of the menu
+        const name = traditionOf(id, tradition);
+        teacherRows.querySelector(`[data-tid="${id}"]`).textContent = name;
+        teacherRows.querySelector(`[data-sid="${id}"]`).setAttribute("aria-label", name);
+      }
+      for (const li of document.querySelectorAll("#answers [data-tid]")) {  // the cards already on the page
+        const [id, title, tradition] = TEACHERS.find((t) => t[0] === li.dataset.tid);
+        heading(li.querySelector("h2"), id, title, tradition);
+        const body = li.querySelector(".body");
+        if (li.classList.contains("waiting")) body.textContent = s.thinking;
+        else if (li.classList.contains("failed")) body.textContent = s.failed;
+        else if (li.dataset.decline !== undefined) body.textContent = (li.dataset.decline || s.decline).replace("{title}", titleOf(id, title));
+      }
     }
 
     for (const [id, , tradition] of TEACHERS) {
       const row = document.createElement("div");
       row.className = "row";
       const label = document.createElement("span");
-      label.textContent = tradition;
+      label.dataset.tid = id;
       const sw = document.createElement("button");
       sw.type = "button";
       sw.className = "switch";
       sw.setAttribute("role", "switch");
-      sw.setAttribute("aria-label", tradition);
+      sw.dataset.sid = id;
       sw.setAttribute("aria-checked", String(!off.has(id)));
       sw.addEventListener("click", () => {
         if (off.has(id)) off.delete(id); else off.add(id);
         sw.setAttribute("aria-checked", String(!off.has(id)));
         store.set("guru-off", JSON.stringify([...off]));
+        if (off.has(id)) dropCard(id); else addCard(id);  // a question that is on the page follows the switch
       });
       row.append(label, sw);
       teacherRows.append(row);
@@ -250,12 +327,17 @@
       if (t.dataset.themeSet) { applyTheme(t.dataset.themeSet); store.set("guru-theme", t.dataset.themeSet); }
       if (t.dataset.langSet) { applyLang(t.dataset.langSet); store.set("guru-lang", t.dataset.langSet); }
     });
+    document.getElementById("policyBtn").addEventListener("click", () => { setMenu(false); policy.showModal(); });
+    document.getElementById("policyClose").addEventListener("click", () => policy.close());
+    policy.addEventListener("click", (e) => { if (e.target === policy) policy.close(); });  // a click on the backdrop
     const setMenu = (open) => { menu.hidden = !open; menuBtn.setAttribute("aria-expanded", String(open)); };
     menuBtn.addEventListener("click", () => setMenu(menu.hidden));
     document.addEventListener("click", (e) => { if (!menu.hidden && !e.target.closest(".menu-wrap")) setMenu(false); });
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !menu.hidden) { setMenu(false); menuBtn.focus(); } });
     applyTheme(store.get("guru-theme") || "light");
     applyLang(lang);
+    const openSlug = decodeURIComponent(location.pathname.split("/").pop());
+    if (openSlug && openSlug !== "index.html") openSaved(openSlug);
 
     const form = document.getElementById("ask");
     const question = document.getElementById("question");
@@ -305,16 +387,22 @@
     }
 
     // One card, the same for every teacher and for the screener.
-    function card(title, tradition, text) {
+    function heading(h, id, title, tradition) {
+      h.replaceChildren(titleOf(id, title) + " ");
+      if (tradition) {
+        const small = document.createElement("small");
+        small.textContent = "· " + traditionOf(id, tradition);
+        h.append(small);
+      }
+    }
+
+    // A teacher's card (id given) is labelled again when the language is switched; the screener's has no id.
+    function card(id, title, tradition, text) {
       const li = document.createElement("li");
       li.className = "answer waiting";
       const h = document.createElement("h2");
-      h.append(title + " ");
-      if (tradition) {
-        const small = document.createElement("small");
-        small.textContent = "· " + tradition;
-        h.append(small);
-      }
+      if (id) li.dataset.tid = id;
+      heading(h, id, title, tradition);
       const body = document.createElement("div");
       body.className = "body";
       body.textContent = text;
@@ -326,34 +414,79 @@
     function cards() {
       list.replaceChildren();
       const byId = {};
-      for (const [id, title, tradition] of TEACHERS) if (!off.has(id)) byId[id] = card(title, tradition, STR[lang].thinking);
+      for (const [id, title, tradition] of TEACHERS) if (!off.has(id)) byId[id] = card(id, title, tradition, STR[lang].thinking);
       return byId;
     }
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const q = question.value.trim();
-      if (!q) return;
-      document.body.classList.add("asked");
-      note.textContent = "";
-      const teachers = enabledIds();
-      if (!teachers.length) { list.replaceChildren(); note.textContent = STR[lang].none; return; }
-      send.disabled = true;
-      const byId = cards();
-      const fill = (line) => {
+    // The first question moves the logo and the box from the middle of the screen to the top. The View Transitions API animates that
+    // move (both are named in the CSS); where it is missing, or motion is reduced, the page just jumps.
+    // The address of a question is the page's folder plus its slug (guru.situs.id/apa-surga-itu-ada). No page reload: only the address bar changes.
+    const folder = () => location.pathname.replace(/[^/]*$/, "");
+    function setAddress(slug) {
+      const to = folder() + encodeURIComponent(slug);
+      if (location.pathname !== to) history.pushState(null, "", to);
+    }
+
+    // An address with a slug shows what is saved for it (GET /answer/<slug> on the Worker), without asking any teacher again.
+    async function openSaved(slug) {
+      try {
+        const res = await fetch(`${WORKER_URL}/answer/${encodeURIComponent(slug)}`);
+        if (!res.ok) throw new Error("not found");
+        const data = await res.json();
+        const items = [];
+        if (data.outOfScope && data.message) items.push(["", "Screener", "", data.message]);
+        else for (const [id, title, tradition] of TEACHERS) if (data.answers[id] && !off.has(id)) items.push([id, title, tradition, data.answers[id]]);
+        if (!items.length) throw new Error("nothing saved");
+        question.value = data.question;
+        question.dispatchEvent(new Event("input"));
+        document.body.classList.add("asked");
+        list.replaceChildren();
+        const byId = {};
+        for (const [id, title, tradition, text] of items) {
+          const li = card(id, title, tradition, "");
+          if (id) byId[id] = li;
+          li.classList.remove("waiting");
+          if (id) li.querySelector(".body").innerHTML = render(text);
+          else li.querySelector(".body").textContent = text;
+        }
+        shown = { q: data.question, byId, outOfScope: !items[0][0] };  // so a teacher switched on later gets a card here too
+      } catch {
+        history.replaceState(null, "", folder());  // an address nobody saved: back to the empty page
+      }
+    }
+    addEventListener("popstate", () => location.reload());  // back/forward between questions
+
+    function showAsked() {
+      if (document.body.classList.contains("asked")) return;
+      const go = () => document.body.classList.add("asked");
+      if (document.startViewTransition && !matchMedia("(prefers-reduced-motion: reduce)").matches) document.startViewTransition(go);
+      else go();
+    }
+
+    // What is on the page now: the question and its cards (teacher id -> card). Switching a teacher on in the menu adds that teacher's card to it.
+    let shown = null;
+
+    // Handles one line of the Worker's answer for the cards in byId. addOn: one more teacher asked about a question that is already shown.
+    function makeFill(byId, addOn) {
+      return (line) => {
         if (line.id === "screener") {
+          if (line.slug) setAddress(line.slug);
           // The screener decides first: keep only the teachers who can answer, or show why none can.
           if (line.outOfScope) {
+            if (addOn) return;  // the cards already shown stay; the card of the added teacher is dropped by the caller
+            if (shown) shown.outOfScope = true;
             // No teacher can answer: the screener's own card, in the same look as the teachers' (not the note under the form).
             list.replaceChildren();
-            const li = card("Screener", "", line.message);
+            const li = card("", "Screener", "", line.message);
             li.classList.remove("waiting");
           } else if (line.religions) {
             for (const [id, title] of TEACHERS) {
               if (line.religions.includes(id) || !byId[id]) continue;
               const li = byId[id];
+              if (addOn && !li.classList.contains("waiting")) continue;  // this request was only about the added teacher: the cards already answered stay as they are
               li.classList.remove("waiting");
-              li.querySelector(".body").textContent = (line.decline || STR[lang].decline).replace("{title}", title);
+              li.dataset.decline = line.decline || "";  // kept so the title in it can follow a language switch
+              li.querySelector(".body").textContent = (line.decline || STR[lang].decline).replace("{title}", titleOf(id, title));
             }
           }
           return;
@@ -365,26 +498,78 @@
         if (line.answer) body.innerHTML = render(line.answer);
         else { li.classList.add("failed"); body.textContent = STR[lang].failed; }
       };
+    }
+
+    // POST /ask and hand every line of the streamed answer to fill.
+    async function readAnswer(q, teachers, fill) {
+      const res = await fetch(WORKER_URL + "/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q, teachers }) });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(res.status === 429 ? STR[lang].tooMany : err.error || STR[lang].wrong);
+      }
+      const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+      let buffer = "";
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += value;
+        const lines = buffer.split("\n");
+        buffer = lines.pop();
+        for (const l of lines) if (l.trim()) fill(JSON.parse(l));
+      }
+      if (buffer.trim()) fill(JSON.parse(buffer));
+    }
+
+    // A teacher is switched on while a question is shown: its card appears in its place among the others, and only that teacher is asked
+    // (an answer already saved for this question comes straight from the database).
+    async function addCard(id) {
+      if (!shown || shown.outOfScope || shown.byId[id]) return;
+      const at = TEACHERS.findIndex((t) => t[0] === id);
+      const [, title, tradition] = TEACHERS[at];
+      const li = card(id, title, tradition, STR[lang].thinking);
+      const later = [...list.children].find((c) => TEACHERS.findIndex((t) => t[0] === c.dataset.tid) > at);  // keep the order of the teachers
+      if (later) list.insertBefore(li, later);
+      note.textContent = "";
+      const mine = shown;
+      mine.byId[id] = li;
+      const fill = makeFill(mine.byId, true);
+      let screenedOut = false;
       try {
-        const res = await fetch(WORKER_URL + "/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q, teachers }) });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(res.status === 429 ? STR[lang].tooMany : err.error || STR[lang].wrong);
-        }
-        const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
-        let buffer = "";
-        for (;;) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          buffer += value;
-          const lines = buffer.split("\n");
-          buffer = lines.pop();
-          for (const l of lines) if (l.trim()) fill(JSON.parse(l));
-        }
-        if (buffer.trim()) fill(JSON.parse(buffer));
+        await readAnswer(mine.q, [id], (line) => { if (line.outOfScope) screenedOut = true; fill(line); });
+        if (screenedOut) { li.remove(); delete mine.byId[id]; return; }
+        if (li.classList.contains("waiting")) fill({ id });  // no line came for it
+      } catch {
+        li.classList.remove("waiting");
+        li.classList.add("failed");
+        li.querySelector(".body").textContent = STR[lang].failed;
+      }
+    }
+
+    // A teacher is switched off: its card goes.
+    function dropCard(id) {
+      shown?.byId[id]?.remove();
+      if (shown) delete shown.byId[id];
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const q = question.value.trim();
+      if (!q) return;
+      showAsked();
+      note.textContent = "";
+      const teachers = enabledIds();
+      shown = { q, byId: {}, outOfScope: false };
+      if (!teachers.length) { list.replaceChildren(); note.textContent = STR[lang].none; return; }
+      send.disabled = true;
+      const byId = cards();
+      shown.byId = byId;
+      const fill = makeFill(byId, false);
+      try {
+        await readAnswer(q, teachers, fill);
         for (const li of list.querySelectorAll(".waiting")) fill({ id: Object.keys(byId).find((k) => byId[k] === li) });
       } catch (err) {
         list.replaceChildren();
+        shown = null;
         note.textContent = err.message || STR[lang].wrong;
       } finally {
         send.disabled = !question.value.trim();

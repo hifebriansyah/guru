@@ -1,13 +1,15 @@
 // The guru Worker: one question in, one answer from each teacher out (agents/*.md), streamed as each one is ready.
 //
+//   GET /answer/<slug>  ->  {"question","answers":{"islam":"..."},"outOfScope":false,"message":""}: what is saved for that question (404 if nothing)
 //   POST /ask   {"question": "...", "teachers": ["islam", ...] (optional: only these are asked)}  ->  NDJSON, one line per teacher as it finishes:
 //               {"id":"islam","title":"Ustadz","tradition":"Islam","answer":"..."}   or   {"id":"islam",...,"error":"..."}
 //               A screener (agents/screener.md) reads the question first and sends one line before the teachers:
+//               Both screener lines also carry "slug", the address of the question (column slug of table answer).
 //               {"id":"screener","religions":["islam",...],"decline":"As {title}, ..."}  the teachers that will answer (the others stay silent), or
 //               {"id":"screener","outOfScope":true,"message":"..."}  when scripture cannot answer it (a price, code, the weather): no teacher is asked.
 //
 // Settings (worker/guru.jsonc): ALLOWED_ORIGINS, THINKING_LEVEL (or THINKING_BUDGET), MAX_OUTPUT_TOKENS, AXIOM_DATASET, AXIOM_URL, the rate limit LIMITER.
-// Database: D1 binding DB, table answer (tools/setup_db.py). A teacher's answer is saved once and reused for the same question.
+// Database: D1 binding DB, tables answer and questions (tools/setup_db.py). A teacher's answer is saved once and reused for the same question.
 // Secrets: GEMINI_API_KEY, entered in the Cloudflare dashboard (deploys keep it); AXIOM_TOKEN, copied from .env by the deploy.
 //
 // Request log (Axiom, when AXIOM_TOKEN is set), like omonomon's: one line per teacher per question with what was sent to Gemini
@@ -93,35 +95,91 @@ async function screen(env, question, trace) {
   }
 }
 
-// Table answer (D1): a row per question, a column per teacher (named by the teacher's id), NULL until that teacher was asked.
+// The row a question uses in table answer: lower case, single spaces, no punctuation at either end, so "Apa itu surga?" and
+// "apa itu surga!" share one. tools/setup_db.py has the same key() for the migration.
+function key(question) {
+  const spaced = question.toLowerCase().replace(/\s+/g, " ").trim();
+  const k = spaced.replace(/^[\s¡¿"'“”‘’(]+|[\s?!.。,;:…"'“”‘’)]+$/g, "").replace(/\s+([?!.,])/g, "$1");
+  return k || spaced;  // a question of punctuation only ("???") keeps it
+}
+
+// Table answer (D1): a row per key, a column per teacher (named by the teacher's id), NULL until that teacher was asked.
+// Table questions: each question exactly as typed -> its row in answer (id). It is read first, so a question can be pointed at
+// any row by hand; a question not in it uses the row of its key, and is added once that row exists.
 // A database failure never blocks an answer: reading gives {} (everyone is asked), writing is skipped.
-async function savedAnswers(env, key) {
+async function savedAnswers(env, question, key) {
   if (!env.DB) return {};
   try {
+    const linked = await env.DB.prepare("SELECT answer.* FROM questions JOIN answer ON answer.id = questions.answer_id WHERE questions.question = ?").bind(question).first();
+    if (linked) return { ...linked, linked: true };
     return (await env.DB.prepare("SELECT * FROM answer WHERE question = ?").bind(key).first()) || {};
   } catch {
     return {};
   }
 }
 
-// Columns <id>_answerable: the screener's verdict for each teacher, 1 (its tradition can answer) or 0. A question nobody can answer is all 0,
-// and column screener then holds the screener's answer to show.
-async function saveVerdict(env, key, religions, message) {
+// Adds the question as typed to table questions, pointing at the row of its key (nothing when that row does not exist yet, or the question is already there).
+async function linkQuestion(env, question, key) {
   if (!env.DB) return;
-  const cols = PERSONAS.map((p) => `"${p.id}_answerable"`);
   try {
-    await env.DB.prepare(`INSERT INTO answer (question, ${cols.join(", ")}, screener, updated_at) VALUES (?1, ${cols.map((_, i) => `?${i + 2}`).join(", ")}, ?${cols.length + 2}, datetime('now'))
-      ON CONFLICT(question) DO UPDATE SET ${cols.map((c) => `${c} = excluded.${c}`).join(", ")}, screener = excluded.screener, updated_at = datetime('now')`)
-      .bind(key, ...PERSONAS.map((p) => (religions.includes(p.id) ? 1 : 0)), message || null).run();
+    await env.DB.prepare("INSERT OR IGNORE INTO questions (question, answer_id) SELECT ?1, id FROM answer WHERE question = ?2").bind(question, key).run();
   } catch {}
 }
 
-async function saveAnswer(env, key, id, text) {
+// Columns <id>_answerable: the screener's verdict for each teacher, 1 (its tradition can answer) or 0. A question nobody can answer is all 0,
+// and column screener then holds the screener's answer to show.
+// Saving: into the row found for the question (row.id), or else into the row of its key, made on the first save.
+async function saveVerdict(env, row, key, religions, message) {
+  if (!env.DB) return;
+  const cols = PERSONAS.map((p) => `"${p.id}_answerable"`);
+  const values = [...PERSONAS.map((p) => (religions.includes(p.id) ? 1 : 0)), message || null];
+  try {
+    if (row.id) {
+      await env.DB.prepare(`UPDATE answer SET ${cols.map((c, i) => `${c} = ?${i + 2}`).join(", ")}, screener = ?${cols.length + 2}, updated_at = datetime('now') WHERE id = ?1`)
+        .bind(row.id, ...values).run();
+      return;
+    }
+    await env.DB.prepare(`INSERT INTO answer (question, ${cols.join(", ")}, screener, updated_at) VALUES (?1, ${cols.map((_, i) => `?${i + 2}`).join(", ")}, ?${cols.length + 2}, datetime('now'))
+      ON CONFLICT(question) DO UPDATE SET ${cols.map((c) => `${c} = excluded.${c}`).join(", ")}, screener = excluded.screener, updated_at = datetime('now')`)
+      .bind(key, ...values).run();
+  } catch {}
+}
+
+async function saveAnswer(env, row, key, id, text) {
   if (!env.DB || !PERSONAS.some((p) => p.id === id)) return;  // the id is a column name: only a known teacher's is ever used
   try {
+    if (row.id) {
+      await env.DB.prepare(`UPDATE answer SET "${id}" = ?2, updated_at = datetime('now') WHERE id = ?1`).bind(row.id, text).run();
+      return;
+    }
     await env.DB.prepare(`INSERT INTO answer (question, "${id}", updated_at) VALUES (?1, ?2, datetime('now'))
       ON CONFLICT(question) DO UPDATE SET "${id}" = excluded."${id}", updated_at = datetime('now')`).bind(key, text).run();
   } catch {}
+}
+
+// Column slug of table answer: the address of the question, made from its words ("apa surga itu ada?" -> "apa-surga-itu-ada"), unique, made once and kept.
+function slugify(question) {
+  const s = question.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "").slice(0, 60).replace(/-+$/g, "");
+  return s || crypto.randomUUID().slice(0, 8);  // a question with no letters or digits at all
+}
+
+// Gives the question's row a slug (making the row if the question is new) and puts row.id and row.slug on `row`.
+// Another row may already own the slug (the same words with other letters or punctuation): then -2, -3 ... are tried.
+async function ensureSlug(env, row, key) {
+  if (!env.DB || row.slug) return;
+  const base = slugify(key);
+  for (let i = 0; i < 7; i++) {
+    const slug = i === 0 ? base : i < 6 ? `${base}-${i + 1}` : `${base}-${crypto.randomUUID().slice(0, 6)}`;
+    try {
+      if (row.id) await env.DB.prepare("UPDATE answer SET slug = ?2 WHERE id = ?1").bind(row.id, slug).run();
+      else await env.DB.prepare(`INSERT INTO answer (question, slug, updated_at) VALUES (?1, ?2, datetime('now')) ON CONFLICT(question) DO UPDATE SET slug = COALESCE(slug, excluded.slug)`).bind(key, slug).run();
+      const made = await env.DB.prepare(row.id ? "SELECT id, slug FROM answer WHERE id = ?" : "SELECT id, slug FROM answer WHERE question = ?").bind(row.id || key).first();
+      if (made) { row.id = made.id; row.slug = made.slug; }
+      return;
+    } catch (err) {
+      if (!/UNIQUE/i.test(String(err.message))) return;  // a taken slug: try the next one; any other failure: no slug, the answer still goes out
+    }
+  }
 }
 
 // When Gemini is busy (503) or a per-minute quota is hit (429), wait a moment and ask the same model again (twice at most).
@@ -145,7 +203,7 @@ export default {
     const originOk = allowed.some((a) => origin === a || origin.startsWith(`${a}:`));  // http://localhost also allows its ports
     const cors = {
       "Access-Control-Allow-Origin": originOk ? origin : "null",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
       Vary: "Origin",
     };
@@ -161,6 +219,15 @@ export default {
 
     if (request.method === "OPTIONS") return new Response(null, { status: originOk ? 204 : 403, headers: cors });
     if (!originOk) return reply({ error: "forbidden" }, 403);
+    // GET /answer/<slug>: what is saved for that question, so a shared address shows the answers again without asking anyone.
+    const found = u.pathname.match(/^\/answer\/([^/]+)$/);
+    if (found && request.method === "GET") {
+      let row = null;
+      try { row = env.DB ? await env.DB.prepare("SELECT * FROM answer WHERE slug = ?").bind(decodeURIComponent(found[1])).first() : null; } catch {}
+      if (!row) return reply({ error: "not found" }, 404);
+      const answers = Object.fromEntries(PERSONAS.filter((p) => row[p.id]).map((p) => [p.id, row[p.id]]));
+      return reply({ question: row.question, answers, outOfScope: PERSONAS.every((p) => row[`${p.id}_answerable`] === 0), message: row.screener || "" });
+    }
     if (u.pathname !== "/ask" || request.method !== "POST") return reply({ error: "not found" }, 404);
     if (!env.GEMINI_API_KEY) return reply({ error: "not configured" }, 503);
 
@@ -180,15 +247,20 @@ export default {
     const writer = writable.getWriter();
     const encoder = new TextEncoder();
     const send = (obj) => writer.write(encoder.encode(`${JSON.stringify(obj)}\n`));
-    const key = question.toLowerCase().replace(/\s+/g, " ");  // the same question typed with other spacing or capitals is the same row
+    const qkey = key(question);
     const asked = crypto.randomUUID();  // ties the lines of one question together in the log
     const sent = { model: MODEL, ...generationConfig(env) };
     const run = async () => {
       // Table answer (D1): answers already saved are reused, and a question every tradition already refused is refused again with the saved screener answer.
-      const saved = await savedAnswers(env, key);
+      const saved = await savedAnswers(env, question, qkey);
+      await ensureSlug(env, saved, qkey);  // the page puts it in the address bar; it also makes the row, so saved.id is set from here on
+      // A question not yet in table questions is added after each save (its row may only exist from then on); once is enough when the row is already there.
+      const link = saved.linked ? () => {} : () => linkQuestion(env, question, qkey);
+      if (saved.id) ctx.waitUntil(link());
+      const save = (write) => ctx.waitUntil(write.then(link));
       if (saved.screener && PERSONAS.every((p) => saved[`${p.id}_answerable`] === 0)) {
         logLine(env, ctx, { ...who, kind: "screener", asked, question, cached: true, answerable: false, message: saved.screener });
-        await send({ id: "screener", outOfScope: true, message: saved.screener });
+        await send({ id: "screener", slug: saved.slug, outOfScope: true, message: saved.screener });
         return;
       }
       // The screener goes first (one cheap call): it picks the teachers, or says the question is not for holy scripture.
@@ -197,17 +269,17 @@ export default {
       const verdict = await screen(env, question, screenTrace);
       logLine(env, ctx, { ...who, kind: "screener", asked, question, teachers: [...enabled].join(","), model: SCREENER_MODEL, answerable: verdict.answerable, religions: verdict.religions.join(","),
         message: verdict.message, error: verdict.error, ...verdict.usage, tries: screenTrace.tries, ms: Date.now() - t1 });
-      if (!verdict.error) ctx.waitUntil(saveVerdict(env, key, verdict.religions, verdict.message));  // not when the screener failed: that verdict was only a guess
+      if (!verdict.error) save(saveVerdict(env, saved, qkey, verdict.religions, verdict.message));  // not when the screener failed: that verdict was only a guess
       if (!verdict.answerable) {
-        await send({ id: "screener", outOfScope: true, message: verdict.message || "This is not something holy scripture speaks to. Try asking about faith, morals or the meaning of life." });
+        await send({ id: "screener", slug: saved.slug, outOfScope: true, message: verdict.message || "This is not something holy scripture speaks to. Try asking about faith, morals or the meaning of life." });
         return;
       }
       const chosen = new Set(verdict.religions.filter((r) => enabled.has(r)));  // what the screener picked, among the teachers switched on
-      await send({ id: "screener", religions: [...chosen], decline: verdict.decline });
+      await send({ id: "screener", slug: saved.slug, religions: [...chosen], decline: verdict.decline });
       // Only the teachers whose column in table answer is still empty go to Gemini.
-      await Promise.all(PERSONAS.filter((p) => chosen.has(p.id)).map((p) => ask(p, saved[p.id])));
+      await Promise.all(PERSONAS.filter((p) => chosen.has(p.id)).map((p) => ask(p, saved[p.id], save, saved)));
     };
-    const ask = async (p, cached) => {
+    const ask = async (p, cached, save, saved) => {
       const head = { id: p.id, title: p.title, tradition: p.tradition };
       if (cached) {
         logLine(env, ctx, { ...who, kind: "teacher", asked, teacher: p.id, question, cached: true, status: 200, answer: cached });
@@ -221,7 +293,7 @@ export default {
       try {
         const { text, usage } = await askOne(env, { prompt: `${p.prompt}\n\n${LENGTH_RULE}\n\n${CITE_RULE}` }, question, trace);
         logLine(env, ctx, { ...line, status: 200, answer: text, ...usage, tries: trace.tries, ms: Date.now() - t0 });
-        ctx.waitUntil(saveAnswer(env, key, p.id, text));
+        save(saveAnswer(env, saved, qkey, p.id, text));
         await send({ ...head, answer: text });
       } catch (err) {
         const error = String(err.message || err).slice(0, 300);
