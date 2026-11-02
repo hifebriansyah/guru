@@ -50,7 +50,7 @@ def draw(size: int, padding: float = 0.0, background: str | None = None) -> Imag
 
 FONT = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
 FONT_TEXT = "/System/Library/Fonts/Supplemental/Arial.ttf"
-TAGLINE = ["ASK GURUS", "THEIR PERSPECTIVES"]  # two lines, all capitals
+TAGLINE = ["Ask Gurus", "Their Perspectives"]  # two lines, the first letter of each word in capital
 
 
 def og_image() -> Image.Image:
