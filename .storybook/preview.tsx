@@ -43,7 +43,7 @@ const preview: Preview = {
       toolbar: { title: "Theme", icon: "paintbrush", items: [{ value: "light", title: "Light" }, { value: "dark", title: "Dark" }], dynamicTitle: true },
     },
   },
-  initialGlobals: { locale: "en", theme: "light" },
+  initialGlobals: { locale: "en", theme: "dark" },
   parameters: { backgrounds: { disable: true }, layout: "fullscreen", a11y: { test: "todo" } },
 };
 export default preview;

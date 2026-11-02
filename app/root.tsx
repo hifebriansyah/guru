@@ -10,8 +10,8 @@ const BASE = import.meta.env.BASE_URL;
 const SITE = "https://guru.situs.id";
 const DESCRIPTION = "Ask one question and hear how different religions answer it.";
 
-// Light unless the visitor chose dark; set before the first paint, so there is no flash.
-const THEME_SCRIPT = `try{document.documentElement.dataset.theme=localStorage.getItem("guru-theme")==="dark"?"dark":"light"}catch(e){document.documentElement.dataset.theme="light"}`;
+// Dark unless the visitor chose light; set before the first paint, so there is no flash.
+const THEME_SCRIPT = `try{document.documentElement.dataset.theme=localStorage.getItem("guru-theme")==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}`;
 
 export const meta: Route.MetaFunction = () => [
   { title: "Guru" },
@@ -40,7 +40,7 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-theme="light" suppressHydrationWarning>
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />

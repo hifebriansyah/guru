@@ -22,6 +22,7 @@
   --field: #f3f9fc; --line: rgba(27, 37, 86, .1); --seg-on: #fff;
   --text: #1b2556; --muted: #3871a8; --link: #233e86; --focus: #2194b8; --error: #b3261e;
   --button: #2194b8; --button-text: #fff; /* the same colour as the menu switches */
+  --logo-text: #404040; /* the name next to the logo on the light theme */
   /* one colour per teacher, in the order of the rings */
   --r1: #1b2556; --r2: #233e86; --r3: #3871a8; --r4: #2194b8; --r5: #77c4cf; --r6: #aad9e9; --r7: #f2b84b;
 }
@@ -31,6 +32,7 @@
   --field: #0e2830; --line: rgba(170, 217, 233, .12); --seg-on: rgba(119, 196, 207, .22);
   --text: #e8f4f6; --muted: #8fc9d6; --link: #8fd3e0; --focus: #77c4cf; --error: #f2a097;
   --r1: #aad9e9; --r2: #77c4cf; --r3: #5aa6d6; --r4: #2194b8; --r5: #8fb4e8; --r6: #4fb3a9; --r7: #f2b84b;
+  --logo-text: var(--text);
 }
 
 @layer base {
@@ -69,7 +71,7 @@
 .guru.asked { justify-content: flex-start; min-height: 0; }
 .logo { view-transition-name: logo; margin: 0 0 28px; display: flex; align-items: center; justify-content: center; gap: .25em; font-size: 3.2rem; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
 .asked .logo { margin-bottom: 16px; font-size: 1.6rem; }
-.logo a { display: flex; align-items: center; gap: .25em; color: inherit; text-decoration: none; }
+.logo a { display: flex; align-items: center; gap: .25em; color: var(--logo-text); text-decoration: none; }
 .logo svg { width: 1.4em; height: 1.4em; flex: none; border-radius: 50%; }
 ::view-transition-group(*) { animation-duration: .5s; animation-timing-function: cubic-bezier(.2, .8, .2, 1); }
 

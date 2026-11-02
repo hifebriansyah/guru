@@ -3,9 +3,10 @@
 
     python3 tools/make_icons.py
 
-Needs Pillow (pip3 install pillow). Writes logo.png (transparent) and, for the site and the app,
-public/icon-192.png, public/icon-512.png, public/apple-touch-icon.png and public/favicon.png on the dark page colour,
-and public/og-image.png (1200x630), the picture shown when the address is shared.
+Needs Pillow (pip3 install pillow). Writes logo.png and, for the site and the app, public/icon-192.png, public/icon-512.png, public/icon-maskable-512.png,
+public/apple-touch-icon.png and public/favicon.png: all transparent PNGs of the logo (the app's splash screen and the
+home-screen background come from the manifest's background_color; iOS puts its own background behind apple-touch-icon.png),
+and public/og-image.png (1200x630: the logo and the tagline, centred), the picture shown when the address is shared.
 The same shapes and colours are in app/components/Logo.tsx: change both together.
 """
 from __future__ import annotations
@@ -16,7 +17,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
 RINGS = [(21.24, 5.52, "#4f8fcb"), (16.05, 4.86, "#77c4cf"), (10.1, 7.1, "#cfeaf3")]  # radius, thickness, colour (viewBox 48)
-BAR = (23.1, 24.33, 8.0, 3.02, "#aad9e9")
+BAR = (23.1, 24.33, 8.0, 3.02, "#cfeaf3")  # the same colour as the inner ring, so the bar of the G is one piece with it
 CUT = [(24, 24), (48, 8.5), (48, 24.33), (24, 24.33)]  # the part of the rings that is cut away
 PAGE = "#0a1b22"  # the dark page colour behind the icons
 SS = 8  # supersampling, for smooth edges
@@ -53,7 +54,7 @@ TAGLINE = ["Ask one question and hear", "how different religions answer it."]
 
 
 def og_image() -> Image.Image:
-    """1200x630: the logo and the name on the dark page colour, soft colour blobs behind, the tagline under them."""
+    """1200x630, all centred: the logo, then the tagline, on the dark page colour with soft colour blobs behind."""
     w, h = 1200, 630
     img = Image.new("RGB", (w, h), PAGE)
     blobs = Image.new("RGB", (w, h), PAGE)
@@ -62,14 +63,12 @@ def og_image() -> Image.Image:
     d.ellipse([720, 120, 1380, 760], fill="#1d4f7a")
     d.ellipse([260, 420, 900, 900], fill="#13404c")
     img = Image.blend(img, blobs.filter(ImageFilter.GaussianBlur(120)), 0.75)
-    logo = draw(300)
-    img.paste(logo, (150, 95), logo)
-    title = ImageFont.truetype(FONT, 190)
+    logo = draw(280)
+    img.paste(logo, ((w - 280) // 2, 92), logo)
     d = ImageDraw.Draw(img)
-    d.text((500, 318), "Guru", font=title, fill="#e8f4f6", anchor="ls")
-    tag = ImageFont.truetype(FONT_TEXT, 46)
+    tag = ImageFont.truetype(FONT_TEXT, 48)
     for i, line in enumerate(TAGLINE):
-        d.text((150, 470 + i * 62), line, font=tag, fill="#8fc9d6")
+        d.text((w // 2, 450 + i * 62), line, font=tag, fill="#e8f4f6", anchor="ms")
     return img
 
 
@@ -79,7 +78,8 @@ def main() -> None:
     draw(1024).save(ROOT / "logo.png", optimize=True)
     out = ROOT / "public"
     for name, size in (("icon-512.png", 512), ("icon-192.png", 192), ("apple-touch-icon.png", 180), ("favicon.png", 48)):
-        draw(size, padding=0.1, background=PAGE).convert("RGB").save(out / name, optimize=True)
+        draw(size, padding=0.04).save(out / name, optimize=True)
+    draw(512, padding=0.2).save(out / "icon-maskable-512.png", optimize=True)  # the logo inside the safe zone that a round or squircle mask keeps
     print("logo.png, public/icon-*.png, apple-touch-icon.png, favicon.png and og-image.png written")
 
 

@@ -50,7 +50,7 @@ if (existsSync(join(ROOT, "build", "storybook"))) cpSync(join(ROOT, "build", "st
 // ---- service worker ----
 const { manifestEntries, warnings } = await getManifest({
   globDirectory: OUT,
-  globPatterns: ["**/*.{js,css,html,webmanifest}", "{favicon,icon-192,icon-512,apple-touch-icon}.png"],
+  globPatterns: ["**/*.{js,css,html,webmanifest}", "{favicon,icon-192,icon-512,icon-maskable-512,apple-touch-icon}.png"],
   globIgnores: ["storybook/**", "abism/**", "sw.js", "404.html"],
   maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
 });

@@ -53,7 +53,8 @@ export type Theme = "light" | "dark";
 export type Lang = "en" | "id";
 
 export const theme = {
-  get: (): Theme => (get("guru-theme") === "dark" ? "dark" : "light"),
+  /** Dark unless the visitor chose light. */
+  get: (): Theme => (get("guru-theme") === "light" ? "light" : "dark"),
   set: (value: Theme) => set("guru-theme", value),
 };
 
