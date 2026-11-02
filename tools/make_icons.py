@@ -3,11 +3,11 @@
 
     python3 tools/make_icons.py
 
-Needs Pillow (pip3 install pillow). Writes logo.png and, for the site and the app, public/icon-192.png, public/icon-512.png and public/icon-maskable-512.png (the
-manifest names them) and app/assets/apple-touch-icon.png and app/assets/favicon.png: all transparent PNGs of the logo (the app's splash screen and the
+Needs Pillow (pip3 install pillow). Writes logo.png and, for the site and the app, public/icon-192.png, public/icon-512.png, public/icon-maskable-512.png,
+public/apple-touch-icon.png and public/favicon.png: all transparent PNGs of the logo (the app's splash screen and the
 home-screen background come from the manifest's background_color; iOS puts its own background behind apple-touch-icon.png),
-and app/assets/og-image.png (1200x630: the logo and the tagline, centred), the picture shown when the address is shared.
-The files in app/assets/ are imported by app/root.tsx, so the build gives them names with a hash of their content (cache busting).
+and public/og-image.png (1200x630: the logo and the tagline, centred), the picture shown when the address is shared.
+The names stay the same; app/root.tsx adds ?v=<hash of the file> to the share image, the favicon and the touch icon (cache busting).
 The same shapes and colours are in app/components/Logo.tsx: change both together.
 """
 from __future__ import annotations
@@ -86,17 +86,16 @@ def og_image() -> Image.Image:
 
 
 def main() -> None:
-    assets = ROOT / "app" / "assets"
-    assets.mkdir(exist_ok=True)
-    og_image().save(assets / "og-image.png", optimize=True)
+    (ROOT / "public").mkdir(exist_ok=True)
+    og_image().save(ROOT / "public" / "og-image.png", optimize=True)
     draw(1024).save(ROOT / "logo.png", optimize=True)
     out = ROOT / "public"
     for name, size in (("icon-512.png", 512), ("icon-192.png", 192)):
         draw(size, padding=0.04).save(out / name, optimize=True)
-    draw(180, padding=0.04).save(assets / "apple-touch-icon.png", optimize=True)
-    draw(48, padding=0.04).save(assets / "favicon.png", optimize=True)
+    draw(180, padding=0.04).save(out / "apple-touch-icon.png", optimize=True)
+    draw(48, padding=0.04).save(out / "favicon.png", optimize=True)
     draw(512, padding=0.2).save(out / "icon-maskable-512.png", optimize=True)  # the logo inside the safe zone that a round or squircle mask keeps
-    print("logo.png, public/icon-*.png and app/assets/ (apple-touch-icon, favicon, og-image) written")
+    print("logo.png and public/ (icons, apple-touch-icon, favicon, og-image) written")
 
 
 if __name__ == "__main__":

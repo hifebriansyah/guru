@@ -3,9 +3,6 @@ import { I18nextProvider } from "react-i18next";
 import type { Route } from "./+types/root";
 import { Logo } from "./components/Logo";
 import { UpdatePrompt } from "./features/pwa/UpdatePrompt";
-import appleTouchIcon from "./assets/apple-touch-icon.png?url";
-import favicon from "./assets/favicon.png?url";
-import ogImage from "./assets/og-image.png?url";
 import { i18n } from "./i18n";
 import "./styles/app.css";
 
@@ -13,8 +10,10 @@ const BASE = import.meta.env.BASE_URL;
 const SITE = "https://guru.situs.id";
 const DESCRIPTION = "Ask one question and hear how different religions answer it.";
 // The title on a shared link (Open Graph and Twitter), with no description of its own; the browser tab keeps "Guru".
-// The share image has a hash of its content in its name (Vite), so a new picture is a new address and no cache keeps the old one.
-const OG_IMAGE = new URL(ogImage, SITE).href;
+// Cache busting: the file names never change (other sites link to them), a ?v=<hash of the file> does (scripts/asset-version.ts, set in
+// vite.config.ts): a new picture is a new address for Cloudflare and the chat apps, and the old address keeps working.
+const versioned = (name: string): string => `${name}?v=${__ASSET_V__[name]}`;
+const OG_IMAGE = `${SITE}/${versioned("og-image.png")}`;
 const SHARE_TITLE = "Ask Gurus for their perspectives";
 
 // Dark unless the visitor chose light; set before the first paint, so there is no flash.
@@ -37,8 +36,8 @@ export const meta: Route.MetaFunction = () => [
 ];
 
 export const links: Route.LinksFunction = () => [
-  { rel: "icon", href: favicon, type: "image/png" },
-  { rel: "apple-touch-icon", href: appleTouchIcon },
+  { rel: "icon", href: `${BASE}${versioned("favicon.png")}`, type: "image/png" },
+  { rel: "apple-touch-icon", href: `${BASE}${versioned("apple-touch-icon.png")}` },
   { rel: "manifest", href: `${BASE}manifest.webmanifest` },
   { rel: "canonical", href: `${SITE}/` },
 ];
