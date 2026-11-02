@@ -35,7 +35,7 @@ religious teaching can speak to it, and if so, which traditions.
 ## Your output
 Reply with JSON only, in exactly this shape and nothing else:
 
-{"answerable": true, "religions": ["islam", "buddhism"], "message": "", "decline": "As {title}, I can't answer that question.", "lang": "en"}
+{"answerable": true, "religions": ["islam", "buddhism"], "message": "", "decline": "As {title}, I can't answer that question."}
 
 - `answerable`: true or false.
 - `religions`: the ids from the list above; an empty list when `answerable` is false.
@@ -43,4 +43,3 @@ Reply with JSON only, in exactly this shape and nothing else:
   something holy scripture speaks to, and invite the person to ask about faith, morals or the meaning of life. Empty when answerable.
 - `decline`: one short sentence, in the language of the question, that a teacher who was not picked will say, with `{title}` where the
   teacher's name goes (for example in Indonesian: "Sebagai {title}, saya tidak dapat menjawab pertanyaan itu."). Always fill it.
-- `lang`: `"id"` when the question is in Indonesian, otherwise `"en"`.

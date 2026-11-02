@@ -86,6 +86,11 @@ def main():
     code = code.replace("__SCREENER__", json.dumps((ROOT / "agents" / SCREENER_FILE).read_text(encoding="utf-8").strip(), ensure_ascii=False), 1)
 
     bindings = [{"type": "ratelimit", "name": r["name"], "namespace_id": r["namespace_id"], "simple": r["simple"]} for r in cfg.get("ratelimits", [])]
+    if cfg.get("d1"):
+        db_file = ROOT / "worker" / "guru-db.json"
+        if not db_file.exists():
+            sys.exit("worker/guru-db.json is missing: run  python3 tools/setup_db.py  first")
+        bindings.append({"type": "d1", "name": cfg["d1"]["binding"], "id": json.loads(db_file.read_text())["database_id"]})
     bindings += [{"type": "plain_text", "name": k, "text": v} for k, v in cfg.get("vars", {}).items()]
     metadata = {"main_module": cfg["main"], "compatibility_date": cfg["compatibility_date"], "bindings": bindings,
                 "keep_bindings": ["secret_text"]}  # GEMINI_API_KEY stays across deploys

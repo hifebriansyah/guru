@@ -7,6 +7,8 @@
   "domain": "guru-worker.situs.id",
   // Google refuses Gemini requests handled in some places (Hong Kong: "User location is not supported"), so run near Singapore.
   "placement": { "region": "aws:ap-southeast-1" },
+  // D1 database (name "guru") with one table, answer: a row per question, a column per teacher. Created by tools/setup_db.py (its id goes to worker/guru-db.json).
+  "d1": { "binding": "DB", "name": "guru" },
   "vars": {
     "ALLOWED_ORIGINS": "https://guru.situs.id,http://localhost,https://localhost,http://127.0.0.1",
     // The model is fixed in guru.js: always gemini-3.8-flash.

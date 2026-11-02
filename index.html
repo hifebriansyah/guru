@@ -4,50 +4,120 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Guru</title>
-  <meta name="description" content="Ask one question and hear how six religious traditions answer it.">
+  <meta name="description" content="Ask one question and hear how different religions answer it.">
+  <meta name="theme-color" content="#1b2556">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cmask id='m'%3E%3Crect width='48' height='48' fill='%23fff'/%3E%3Cpath d='M24 24 L48 8.5 V24.33 H24 Z' fill='%23000'/%3E%3C/mask%3E%3Cg fill='none' mask='url%28%23m%29'%3E%3Ccircle cx='24' cy='24' r='21.24' stroke='%23233e86' stroke-width='5.52'/%3E%3Ccircle cx='24' cy='24' r='16.05' stroke='%233871a8' stroke-width='4.86'/%3E%3Ccircle cx='24' cy='24' r='10.1' stroke='%23aad9e9' stroke-width='7.1'/%3E%3C/g%3E%3Crect x='23.1' y='24.33' width='8' height='3.02' fill='%23aad9e9'/%3E%3C/svg%3E">
   <style>
+    /* Solid cards on soft colour blobs. Palette from the logo, dark to light: #1b2556 #233e86 #3871a8 #2194b8 #77c4cf #aad9e9. */
     :root {
-      --bg: #f6f3ee; --card: #fffdf9; --text: #2b2723; --muted: #6f675e; --line: #ded6cb;
-      --accent: #7a5c3e; --accent-text: #fff; --error: #a23b2a;
+      --page: #eef6fb; --blob1: rgba(170, 217, 233, .9); --blob2: rgba(119, 196, 207, .55); --blob3: rgba(56, 113, 168, .28);
+      --surface: #fff; --edge: rgba(27, 37, 86, .08); --shadow: 0 4px 20px rgba(27, 37, 86, .08);
+      --field: #f3f9fc; --line: rgba(27, 37, 86, .1); --seg-on: #fff;
+      --text: #1b2556; --muted: #3871a8; --link: #233e86; --focus: #2194b8; --error: #b3261e;
+      --button: linear-gradient(180deg, #3871a8, #233e86); --button-text: #fff;
+      /* one colour per teacher, in the order of the rings */
+      --r1: #1b2556; --r2: #233e86; --r3: #3871a8; --r4: #2194b8; --r5: #77c4cf; --r6: #aad9e9;
     }
-    @media (prefers-color-scheme: dark) {
-      :root:not([data-theme="light"]) { --bg: #171513; --card: #211e1b; --text: #eee8e1; --muted: #a59c91; --line: #3a352f; --accent: #c9a27c; --accent-text: #1b1714; --error: #e58a78; }
+    :root[data-theme="dark"] {
+      --page: #0a1b22; --blob1: rgba(33, 148, 184, .3); --blob2: rgba(119, 196, 207, .16); --blob3: rgba(56, 113, 168, .24);
+      --surface: #12303a; --edge: rgba(170, 217, 233, .1); --shadow: 0 4px 20px rgba(0, 0, 0, .35);
+      --field: #0e2830; --line: rgba(170, 217, 233, .12); --seg-on: rgba(119, 196, 207, .22);
+      --text: #e8f4f6; --muted: #8fc9d6; --link: #8fd3e0; --focus: #77c4cf; --error: #f2a097;
+      --button: linear-gradient(180deg, #77c4cf, #2194b8); --button-text: #06222b;
+      --r1: #aad9e9; --r2: #77c4cf; --r3: #5aa6d6; --r4: #2194b8; --r5: #8fb4e8; --r6: #4fb3a9;
     }
-    :root[data-theme="dark"] { --bg: #171513; --card: #211e1b; --text: #eee8e1; --muted: #a59c91; --line: #3a352f; --accent: #c9a27c; --accent-text: #1b1714; --error: #e58a78; }
     * { box-sizing: border-box; }
     body {
-      margin: 0; min-height: 100vh; padding: 48px 16px;
-      background: var(--bg); color: var(--text); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+      margin: 0; min-height: 100vh; padding: 24px 16px 32px;
+      background: var(--page); color: var(--text);
+      font: 16px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased;
     }
-    main { width: 100%; max-width: 680px; margin: 0 auto; }
-    header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
-    h1 { margin: 0; font-size: 1.6rem; }
-    button.theme {
-      margin: 0; width: 40px; height: 40px; padding: 0; display: grid; place-items: center;
-      background: transparent; color: var(--text); border: 1px solid var(--line); border-radius: 10px;
+    /* the colour behind the cards: soft blobs that stay put while the page scrolls */
+    body::before {
+      content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      background:
+        radial-gradient(40vmax 40vmax at 10% 5%, var(--blob1), transparent 70%),
+        radial-gradient(35vmax 35vmax at 95% 30%, var(--blob2), transparent 70%),
+        radial-gradient(45vmax 45vmax at 30% 100%, var(--blob3), transparent 70%);
     }
-    button.theme svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    button.theme .sun, :root[data-theme="dark"] button.theme .moon { display: none; }
-    :root[data-theme="dark"] button.theme .sun { display: block; }
-    .intro { margin: 0 0 20px; color: var(--muted); }
-    form, .answer { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+    /* one look for every surface */
+    form, .answer, .menu { background: var(--surface); border: 1px solid var(--edge); box-shadow: var(--shadow); }
+    /* Like a search page: before the first question only the logo and the box, in the middle of the screen. After it (body.asked)
+       they move to the top and shrink, and the answers come in below. */
+    main { width: 100%; max-width: 680px; margin: 0 auto; min-height: calc(100vh - 150px); min-height: calc(100dvh - 150px); display: flex; flex-direction: column; justify-content: center; }
+    body.asked main { justify-content: flex-start; min-height: 0; }
+    h1 {
+      margin: 0 0 28px; display: flex; align-items: center; justify-content: center; gap: .25em;
+      font-size: 3.2rem; font-weight: 700; letter-spacing: -.03em; line-height: 1;
+    }
+    h1 svg { width: 1.4em; height: 1.4em; flex: none; border-radius: 50%; }
+    body.asked h1 { margin-bottom: 16px; font-size: 1.6rem; }
+    /* on the dark page the navy outer rings would vanish: the logo sits on a light disc instead */
+    /* on dark the logo has no white disc: its rings are lightened so they show on the page */
+    :root[data-theme="dark"] h1 .ring1 { stroke: #4f8fcb; }
+    :root[data-theme="dark"] h1 .ring2 { stroke: #77c4cf; }
+    :root[data-theme="dark"] h1 .ring3 { stroke: #cfeaf3; }
+    /* the box: the question grows with its text, the settings and send buttons sit inside on the right */
+    form { position: relative; display: flex; align-items: flex-end; gap: 4px; padding: 6px 6px 6px 22px; border-radius: 28px; transition: box-shadow .15s; }
+    form:focus-within { box-shadow: var(--shadow), 0 0 0 2px color-mix(in srgb, var(--focus) 60%, transparent); }
     textarea {
-      width: 100%; min-height: 120px; resize: vertical; padding: 12px; border: 1px solid var(--line); border-radius: 10px;
-      background: var(--bg); color: inherit; font: inherit;
+      flex: 1; min-width: 0; display: block; max-height: 40vh; margin: 0; padding: 9px 0; border: 0; outline: 0; resize: none; overflow-y: auto;
+      background: transparent; color: inherit; font: inherit; line-height: 1.5;
     }
-    textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    button {
-      margin-top: 12px; width: 100%; padding: 12px; border: 0; border-radius: 10px; cursor: pointer;
-      background: var(--accent); color: var(--accent-text); font: inherit; font-weight: 600;
+    textarea::placeholder { color: var(--muted); opacity: .7; }
+    button { margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+    button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+    button.icon {
+      flex: none; width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; color: var(--muted); transition: background .15s;
     }
-    button:disabled { opacity: .5; cursor: default; }
-    .note { margin: 12px 0 0; font-size: .9rem; color: var(--muted); }
+    button.icon:hover, button.icon[aria-expanded="true"] { background: var(--line); }
+    button.send { background: var(--button); color: var(--button-text); box-shadow: 0 4px 12px rgba(33, 148, 184, .3); transition: transform .12s, filter .15s, opacity .15s; }
+    button.send:hover { background: var(--button); filter: brightness(1.08); }
+    button.send:active:not(:disabled) { transform: scale(.94); }
+    button:disabled { opacity: .4; cursor: default; box-shadow: none; filter: none; }
+    svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .menu-wrap { display: contents; }  /* the menu hangs from the whole box, not from the button */
+    .menu {
+      position: absolute; right: 0; top: calc(100% + 8px); z-index: 10; width: 260px; display: grid; gap: 10px; padding: 12px;
+      border-radius: 22px;
+    }
+    .menu[hidden] { display: none; }
+    .menu hr { width: 100%; margin: 0; border: 0; border-top: 1px solid var(--line); }
+    .menu button { font-weight: 600; }
+    .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 3px; background: var(--line); border-radius: 999px; }
+    .seg button { height: 32px; display: grid; place-items: center; border-radius: 999px; color: var(--muted); font-size: .85rem; }
+    .seg button svg.i { width: 18px; height: 18px; }
+    .seg button[aria-pressed="true"] { background: var(--seg-on); color: var(--text); box-shadow: 0 2px 8px rgba(27, 37, 86, .15); }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 2px; font-size: .9rem; }
+    .menu .switch { position: relative; flex: none; width: 46px; height: 28px; border-radius: 999px; background: var(--line); transition: background .2s; }
+    .switch::after {
+      content: ""; position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%;
+      background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, .2); transition: transform .2s;
+    }
+    .switch[aria-checked="true"] { background: #2194b8; }
+    .switch[aria-checked="true"]::after { transform: translateX(18px); }
+    .answer { border-radius: 26px; padding: 16px; }
+    .note { margin: 14px 8px 0; font-size: .9rem; color: var(--muted); text-align: center; }
     .note:empty { display: none; }
-    .privacy { margin: 10px 4px 0; font-size: .8rem; color: var(--muted); }
+    .privacy { max-width: 680px; margin: 32px auto 0; font-size: .75rem; color: var(--muted); text-align: center; opacity: .85; }
     .answers { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 12px; }
-    .answer h2 { margin: 0 0 8px; font-size: 1rem; }
+    /* each teacher's colour as a small glowing dot before the name */
+    .answer { --ring: var(--r1); }
+    .answer:nth-child(6n+2) { --ring: var(--r2); }
+    .answer:nth-child(6n+3) { --ring: var(--r3); }
+    .answer:nth-child(6n+4) { --ring: var(--r4); }
+    .answer:nth-child(6n+5) { --ring: var(--r5); }
+    .answer:nth-child(6n+6) { --ring: var(--r6); }
+    .answer h2 { margin: 0 0 8px; display: flex; align-items: baseline; gap: 6px; font-size: 1rem; }
+    .answer h2::before {
+      content: ""; flex: none; align-self: center; width: 10px; height: 10px; border-radius: 50%;
+      background: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 25%, transparent);
+    }
     .answer h2 small { font-weight: 400; color: var(--muted); }
-    .answer a { color: var(--accent); text-underline-offset: 2px; }
+    .answer a { color: var(--link); font-weight: 600; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); text-underline-offset: 3px; }
+    .answer.waiting h2::before { animation: wait 1.4s ease-in-out infinite; }
+    @keyframes wait { 50% { opacity: .3; transform: scale(.7); } }
+    @media (prefers-reduced-motion: reduce) { .answer.waiting h2::before { animation: none; } }
     .answer p { margin: 0 0 8px; }
     .answer p:last-child { margin-bottom: 0; }
     .answer.waiting .body { color: var(--muted); font-style: italic; }
@@ -56,23 +126,47 @@
 </head>
 <body>
   <main>
-    <header>
-      <h1>Guru</h1>
-      <button type="button" class="theme" id="theme" aria-label="Switch between light and dark mode">
-        <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-        <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-      </button>
-    </header>
-    <p class="intro">Ask one question and hear how six religious traditions answer it.</p>
+    <h1>
+        <!-- the logo (logo.png): three rings, the top-right cut out like a G -->
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <mask id="gcut"><rect width="48" height="48" fill="#fff"/><path d="M24 24 L48 8.5 V24.33 H24 Z" fill="#000"/></mask>
+          <g fill="none" mask="url(#gcut)">
+            <circle class="ring1" cx="24" cy="24" r="21.24" stroke="#233e86" stroke-width="5.52"/>
+            <circle class="ring2" cx="24" cy="24" r="16.05" stroke="#3871a8" stroke-width="4.86"/>
+            <circle class="ring3" cx="24" cy="24" r="10.1" stroke="#aad9e9" stroke-width="7.1"/>
+          </g>
+          <rect x="23.1" y="24.33" width="8" height="3.02" fill="#aad9e9"/>
+        </svg>
+        Guru
+      </h1>
     <form id="ask">
-      <label for="question" hidden>Your question</label>
-      <textarea id="question" name="question" maxlength="500" required placeholder="What does my faith say about forgiveness?"></textarea>
-      <button type="submit" id="send" disabled>Ask</button>
-      <p class="note" id="note" role="status" aria-live="polite"></p>
+      <label for="question" hidden data-t="label">Your question</label>
+      <textarea id="question" name="question" rows="1" maxlength="500" required data-tp="placeholder" placeholder="What does my faith say about forgiveness?"></textarea>
+      <div class="menu-wrap">
+        <button type="button" class="icon" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="menu" data-ta="menu" aria-label="Settings">
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+        </button>
+        <div class="menu" id="menu" hidden>
+          <div class="seg" role="group" data-ta="theme" aria-label="Theme">
+            <button type="button" data-theme-set="light" data-ta="light" aria-label="Light"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+            <button type="button" data-theme-set="dark" data-ta="dark" aria-label="Dark"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+          </div>
+          <div class="seg" role="group" data-ta="language" aria-label="Language">
+            <button type="button" data-lang-set="id">ID</button>
+            <button type="button" data-lang-set="en">EN</button>
+          </div>
+          <hr>
+          <div id="teacherRows" role="group" data-ta="teachers" aria-label="Teachers"></div>
+        </div>
+      </div>
+      <button type="submit" class="icon send" id="send" data-ta="ask" aria-label="Ask" disabled>
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+      </button>
     </form>
-    <p class="privacy">Questions and answers are kept in our log to keep the service working well. Please don't include personal details.</p>
+    <p class="note" id="note" role="status" aria-live="polite"></p>
     <ul class="answers" id="answers" aria-live="polite"></ul>
   </main>
+  <p class="privacy" data-t="privacy">Questions and answers are kept in our log to keep the service working well. Please don't include personal details.</p>
   <script>
     const WORKER_URL = "https://guru-worker.situs.id";
     // The order the answers are shown in; the Worker sends each one as soon as it is ready.
@@ -81,32 +175,108 @@
       ["hinduism", "Acharya", "Hinduism"], ["buddhism", "Bhante", "Buddhism"], ["confucianism", "Laoshi", "Confucianism"],
     ];
 
-    // Light/dark: the saved choice, else the system's; the button flips it and remembers it.
+    // Text of the page in both languages. The language is only for the page: the teachers answer in the language of the question.
+    const STR = {
+      en: {
+        intro: "Ask one question and hear how different religions answer it.", label: "Your question", placeholder: "What does my faith say about forgiveness?", ask: "Ask",
+        privacy: "Questions and answers are kept in our log to keep the service working well. Please don't include personal details.",
+        thinking: "Thinking…", failed: "This teacher could not answer right now.", decline: "As {title}, I can't answer that question.",
+        tooMany: "Too many questions. Please wait a minute.", wrong: "Something went wrong.", none: "Switch on at least one teacher in the menu.",
+        menu: "Settings", theme: "Theme", light: "Light", dark: "Dark", language: "Language", teachers: "Teachers",
+        description: "Ask one question and hear how different religions answer it.",
+      },
+      id: {
+        intro: "Ajukan satu pertanyaan dan dengarkan bagaimana berbagai agama menjawabnya.", label: "Pertanyaanmu", placeholder: "Apa kata agamaku tentang memaafkan?", ask: "Tanya",
+        privacy: "Pertanyaan dan jawaban disimpan di log kami agar layanan tetap berjalan baik. Mohon jangan menyertakan data pribadi.",
+        thinking: "Sedang berpikir…", failed: "Guru ini belum bisa menjawab sekarang.", decline: "Sebagai {title}, saya tidak dapat menjawab pertanyaan itu.",
+        tooMany: "Terlalu banyak pertanyaan. Tunggu semenit.", wrong: "Terjadi kesalahan.", none: "Aktifkan setidaknya satu guru di menu.",
+        menu: "Pengaturan", theme: "Tema", light: "Terang", dark: "Gelap", language: "Bahasa", teachers: "Guru",
+        description: "Ajukan satu pertanyaan dan dengarkan bagaimana berbagai agama menjawabnya.",
+      },
+    };
+
     const root = document.documentElement;
-    let saved = null;
-    try { saved = localStorage.getItem("guru-theme"); } catch {}
-    root.dataset.theme = saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-    document.getElementById("theme").addEventListener("click", () => {
-      root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
-      try { localStorage.setItem("guru-theme", root.dataset.theme); } catch {}
+    const store = {
+      get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+      set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+    };
+    // Saved choices, else the system's: light/dark from the system, ID when the browser is Indonesian, every teacher on.
+    let lang = store.get("guru-lang") || ((navigator.language || "").toLowerCase().startsWith("id") ? "id" : "en");
+    let off = new Set((() => { try { return JSON.parse(store.get("guru-off") || "[]"); } catch { return []; } })());
+    const enabledIds = () => TEACHERS.map((t) => t[0]).filter((id) => !off.has(id));
+
+    const menu = document.getElementById("menu");
+    const menuBtn = document.getElementById("menuBtn");
+    const teacherRows = document.getElementById("teacherRows");
+
+    function applyTheme(theme) {
+      root.dataset.theme = theme;
+      for (const b of menu.querySelectorAll("[data-theme-set]")) b.setAttribute("aria-pressed", String(b.dataset.themeSet === theme));
+    }
+    function applyLang(next) {
+      lang = next;
+      const s = STR[lang];
+      root.lang = lang;
+      for (const el of document.querySelectorAll("[data-t]")) el.textContent = s[el.dataset.t];
+      for (const el of document.querySelectorAll("[data-tp]")) el.placeholder = s[el.dataset.tp];
+      for (const el of document.querySelectorAll("[data-ta]")) el.setAttribute("aria-label", s[el.dataset.ta]);
+      document.querySelector('meta[name="description"]').content = s.description;
+      for (const b of menu.querySelectorAll("[data-lang-set]")) b.setAttribute("aria-pressed", String(b.dataset.langSet === lang));
+    }
+
+    for (const [id, , tradition] of TEACHERS) {
+      const row = document.createElement("div");
+      row.className = "row";
+      const label = document.createElement("span");
+      label.textContent = tradition;
+      const sw = document.createElement("button");
+      sw.type = "button";
+      sw.className = "switch";
+      sw.setAttribute("role", "switch");
+      sw.setAttribute("aria-label", tradition);
+      sw.setAttribute("aria-checked", String(!off.has(id)));
+      sw.addEventListener("click", () => {
+        if (off.has(id)) off.delete(id); else off.add(id);
+        sw.setAttribute("aria-checked", String(!off.has(id)));
+        store.set("guru-off", JSON.stringify([...off]));
+      });
+      row.append(label, sw);
+      teacherRows.append(row);
+    }
+
+    menu.addEventListener("click", (e) => {
+      const t = e.target.closest("button");
+      if (!t) return;
+      if (t.dataset.themeSet) { applyTheme(t.dataset.themeSet); store.set("guru-theme", t.dataset.themeSet); }
+      if (t.dataset.langSet) { applyLang(t.dataset.langSet); store.set("guru-lang", t.dataset.langSet); }
     });
+    const setMenu = (open) => { menu.hidden = !open; menuBtn.setAttribute("aria-expanded", String(open)); };
+    menuBtn.addEventListener("click", () => setMenu(menu.hidden));
+    document.addEventListener("click", (e) => { if (!menu.hidden && !e.target.closest(".menu-wrap")) setMenu(false); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !menu.hidden) { setMenu(false); menuBtn.focus(); } });
+    applyTheme(store.get("guru-theme") || "light");
+    applyLang(lang);
 
     const form = document.getElementById("ask");
     const question = document.getElementById("question");
     const send = document.getElementById("send");
     const note = document.getElementById("note");
     const list = document.getElementById("answers");
-    question.addEventListener("input", () => { send.disabled = !question.value.trim(); });
+    // The box grows with the question (up to 40% of the screen, then it scrolls). Enter sends, Shift+Enter starts a new line.
+    const grow = () => { question.style.height = "auto"; question.style.height = question.scrollHeight + "px"; };
+    question.addEventListener("input", () => { send.disabled = !question.value.trim(); grow(); });
+    question.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); if (!send.disabled) form.requestSubmit(); }
+    });
 
     // The teachers never write addresses: they write citation tags like [[quran 2:286]] and this builds the link, only when the tag
     // has exactly the expected shape. Anything else stays plain text, so a made-up reference can never become a made-up link.
     const SURAH_SLUGS = "al-fatihah al-baqarah ali-imran an-nisa al-maidah al-anam al-araf al-anfal at-taubah yunus hud yusuf ar-rad ibrahim al-hijr an-nahl al-isra al-kahf maryam thaha al-anbiya al-hajj al-muminun an-nur al-furqan asy-syuara an-naml al-qashash al-ankabut ar-rum luqman as-sajdah al-ahzab saba fathir yasin ash-shaffat shad az-zumar ghafir fushshilat asy-syura az-zukhruf ad-dukhan al-jatsiyah al-ahqaf muhammad al-fath al-hujurat qaf adz-dzariyat at-thur an-najm al-qamar ar-rahman al-waqiah al-hadid al-mujadilah al-hasyr al-mumtahanah ash-shaff al-jumuah al-munafiqun at-taghabun at-thalaq at-tahrim al-mulk al-qalam al-haqqah al-maarij nuh al-jinn al-muzzammil al-muddatstsir al-qiyamah al-insan al-mursalat an-naba an-naziat abasa at-takwir al-infithar al-muthaffifin al-insyiqaq al-buruj at-thariq al-ala al-ghasyiyah al-fajr al-balad asy-syams al-lail adh-dhuha al-insyirah at-tin al-alaq al-qadr al-bayyinah az-zalzalah al-adiyat al-qariah at-takatsur al-ashr al-humazah al-fil quraisy al-maun al-kautsar al-kafirun an-nashr al-lahab al-ikhlash al-falaq an-nas".split(" ");
     const ANALECTS = "xue-er wei-zheng ba-yi li-ren gong-ye-chang yong-ye shu-er tai-bo zi-han xiang-dang xian-jin yan-yuan zi-lu xian-wen wei-ling-gong ji-shi yang-huo wei-zi zi-zhang yao-yue".split(" ");
-    let answerLang = "en";  // "id" or "en", from the screener: the language of the question (Quran pages exist in both)
     const REFS = {
       // Quran: our own site, the surah page at the verse
       quran: (a) => { const m = /^(\d{1,3}):(\d{1,3})(?:[-–]\d{1,3})?$/.exec(a); const s = m && SURAH_SLUGS[m[1] - 1];
-        return s && [`https://quran.situs.id/${answerLang}/${s}#ayat-${m[2]}`, "Quran " + a]; },
+        return s && [`https://quran.situs.id/${lang}/${s}#ayat-${m[2]}`, "Quran " + a]; },
       // Bible (Protestant and Catholic): the passage on BibleGateway, book in English
       bible: (a) => /^[1-3]? ?[A-Za-z][A-Za-z ]{1,24} \d{1,3}(?::\d{1,3}(?:[-–]\d{1,3})?)?$/.test(a) &&
         [`https://www.biblegateway.com/passage/?search=${encodeURIComponent(a)}`, a],
@@ -134,24 +304,29 @@
         .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\*(.+?)\*/g, "<em>$1</em>").replace(/\n/g, "<br>") + "</p>").join("");
     }
 
-    function cards() {
-      list.replaceChildren();
-      const byId = {};
-      for (const [id, title, tradition] of TEACHERS) {
-        const li = document.createElement("li");
-        li.className = "answer waiting";
-        const h = document.createElement("h2");
-        h.append(title + " ");
+    // One card, the same for every teacher and for the screener.
+    function card(title, tradition, text) {
+      const li = document.createElement("li");
+      li.className = "answer waiting";
+      const h = document.createElement("h2");
+      h.append(title + " ");
+      if (tradition) {
         const small = document.createElement("small");
         small.textContent = "· " + tradition;
         h.append(small);
-        const body = document.createElement("div");
-        body.className = "body";
-        body.textContent = "Thinking…";
-        li.append(h, body);
-        list.append(li);
-        byId[id] = li;
       }
+      const body = document.createElement("div");
+      body.className = "body";
+      body.textContent = text;
+      li.append(h, body);
+      list.append(li);
+      return li;
+    }
+
+    function cards() {
+      list.replaceChildren();
+      const byId = {};
+      for (const [id, title, tradition] of TEACHERS) if (!off.has(id)) byId[id] = card(title, tradition, STR[lang].thinking);
       return byId;
     }
 
@@ -159,23 +334,26 @@
       e.preventDefault();
       const q = question.value.trim();
       if (!q) return;
-      send.disabled = true;
+      document.body.classList.add("asked");
       note.textContent = "";
+      const teachers = enabledIds();
+      if (!teachers.length) { list.replaceChildren(); note.textContent = STR[lang].none; return; }
+      send.disabled = true;
       const byId = cards();
       const fill = (line) => {
         if (line.id === "screener") {
-          if (line.lang === "id") answerLang = "id";
-          else if (line.lang) answerLang = "en";
           // The screener decides first: keep only the teachers who can answer, or show why none can.
           if (line.outOfScope) {
+            // No teacher can answer: the screener's own card, in the same look as the teachers' (not the note under the form).
             list.replaceChildren();
-            note.textContent = line.message;
+            const li = card("Screener", "", line.message);
+            li.classList.remove("waiting");
           } else if (line.religions) {
             for (const [id, title] of TEACHERS) {
-              if (line.religions.includes(id)) continue;
+              if (line.religions.includes(id) || !byId[id]) continue;
               const li = byId[id];
               li.classList.remove("waiting");
-              li.querySelector(".body").textContent = (line.decline || "As {title}, I can't answer that question.").replace("{title}", title);
+              li.querySelector(".body").textContent = (line.decline || STR[lang].decline).replace("{title}", title);
             }
           }
           return;
@@ -185,13 +363,13 @@
         const body = li.querySelector(".body");
         li.classList.remove("waiting");
         if (line.answer) body.innerHTML = render(line.answer);
-        else { li.classList.add("failed"); body.textContent = "This teacher could not answer right now."; }
+        else { li.classList.add("failed"); body.textContent = STR[lang].failed; }
       };
       try {
-        const res = await fetch(WORKER_URL + "/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q }) });
+        const res = await fetch(WORKER_URL + "/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q, teachers }) });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          throw new Error(res.status === 429 ? "Too many questions. Please wait a minute." : err.error || "Something went wrong.");
+          throw new Error(res.status === 429 ? STR[lang].tooMany : err.error || STR[lang].wrong);
         }
         const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
         let buffer = "";
@@ -207,7 +385,7 @@
         for (const li of list.querySelectorAll(".waiting")) fill({ id: Object.keys(byId).find((k) => byId[k] === li) });
       } catch (err) {
         list.replaceChildren();
-        note.textContent = err.message || "Something went wrong.";
+        note.textContent = err.message || STR[lang].wrong;
       } finally {
         send.disabled = !question.value.trim();
       }
