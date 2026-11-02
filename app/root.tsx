@@ -9,6 +9,8 @@ import "./styles/app.css";
 const BASE = import.meta.env.BASE_URL;
 const SITE = "https://guru.situs.id";
 const DESCRIPTION = "Ask one question and hear how different religions answer it.";
+// The title on a shared link (Open Graph and Twitter), with no description of its own; the browser tab keeps "Guru".
+const SHARE_TITLE = "Ask Gurus for their perspectives";
 
 // Dark unless the visitor chose light; set before the first paint, so there is no flash.
 const THEME_SCRIPT = `try{document.documentElement.dataset.theme=localStorage.getItem("guru-theme")==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}`;
@@ -18,16 +20,14 @@ export const meta: Route.MetaFunction = () => [
   { name: "description", content: DESCRIPTION },
   { property: "og:type", content: "website" },
   { property: "og:site_name", content: "Guru" },
-  { property: "og:title", content: "Guru" },
-  { property: "og:description", content: DESCRIPTION },
+  { property: "og:title", content: SHARE_TITLE },
   { property: "og:url", content: `${SITE}/` },
   { property: "og:image", content: `${SITE}/og-image.png` },
   { property: "og:image:width", content: "1200" },
   { property: "og:image:height", content: "630" },
-  { property: "og:image:alt", content: "Guru: ask one question and hear how different religions answer it." },
+  { property: "og:image:alt", content: "Guru: Ask Gurus for their perspectives." },
   { name: "twitter:card", content: "summary_large_image" },
-  { name: "twitter:title", content: "Guru" },
-  { name: "twitter:description", content: DESCRIPTION },
+  { name: "twitter:title", content: SHARE_TITLE },
   { name: "twitter:image", content: `${SITE}/og-image.png` },
 ];
 

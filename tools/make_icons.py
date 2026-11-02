@@ -50,7 +50,7 @@ def draw(size: int, padding: float = 0.0, background: str | None = None) -> Imag
 
 FONT = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
 FONT_TEXT = "/System/Library/Fonts/Supplemental/Arial.ttf"
-TAGLINE = ["Ask one question and hear", "how different religions answer it."]
+TAGLINE = ["ASK GURUS", "FOR THEIR PERSPECTIVES"]  # the share title (app/root.tsx) in two lines, all capitals
 
 
 def og_image() -> Image.Image:
@@ -64,11 +64,11 @@ def og_image() -> Image.Image:
     d.ellipse([260, 420, 900, 900], fill="#13404c")
     img = Image.blend(img, blobs.filter(ImageFilter.GaussianBlur(120)), 0.75)
     logo = draw(280)
-    img.paste(logo, ((w - 280) // 2, 92), logo)
+    img.paste(logo, ((w - 280) // 2, 78), logo)
     d = ImageDraw.Draw(img)
-    tag = ImageFont.truetype(FONT_TEXT, 48)
+    tag = ImageFont.truetype(FONT, 54)
     for i, line in enumerate(TAGLINE):
-        d.text((w // 2, 450 + i * 62), line, font=tag, fill="#e8f4f6", anchor="ms")
+        d.text((w // 2, 444 + i * 76), line, font=tag, fill="#e8f4f6", anchor="ms")
     return img
 
 
