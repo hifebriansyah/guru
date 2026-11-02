@@ -1,0 +1,161 @@
+/* Guru: Tailwind CSS plus the design of the page. Solid cards on soft colour blobs, no borders: the shadow draws the edge.
+   Palette from the logo, dark to light: #1b2556 #233e86 #3871a8 #2194b8 #77c4cf #aad9e9.
+   Components use utilities where that is enough; what utilities cannot say (themes, scrollbars, view transitions, keyframes,
+   the open/closed look of the menu) lives here. */
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", sans-serif;
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --color-link: var(--link);
+  --color-accent: var(--button);
+}
+
+:root {
+  --page: #eef6fb; --blob1: rgba(170, 217, 233, .9); --blob2: rgba(119, 196, 207, .55); --blob3: rgba(56, 113, 168, .28);
+  --surface: #fff; --shadow: 0 4px 20px rgba(27, 37, 86, .08); --shadow-focus: 0 4px 20px rgba(27, 37, 86, .18);
+  --field: #f3f9fc; --line: rgba(27, 37, 86, .1); --seg-on: #fff;
+  --text: #1b2556; --muted: #3871a8; --link: #233e86; --focus: #2194b8; --error: #b3261e;
+  --button: #2194b8; --button-text: #fff; /* the same colour as the menu switches */
+  /* one colour per teacher, in the order of the rings */
+  --r1: #1b2556; --r2: #233e86; --r3: #3871a8; --r4: #2194b8; --r5: #77c4cf; --r6: #aad9e9; --r7: #f2b84b;
+}
+:root[data-theme="dark"] {
+  --page: #0a1b22; --blob1: rgba(33, 148, 184, .3); --blob2: rgba(119, 196, 207, .16); --blob3: rgba(56, 113, 168, .24);
+  --surface: #12303a; --shadow: 0 4px 20px rgba(0, 0, 0, .35); --shadow-focus: 0 4px 20px rgba(0, 0, 0, .5);
+  --field: #0e2830; --line: rgba(170, 217, 233, .12); --seg-on: rgba(119, 196, 207, .22);
+  --text: #e8f4f6; --muted: #8fc9d6; --link: #8fd3e0; --focus: #77c4cf; --error: #f2a097;
+  --r1: #aad9e9; --r2: #77c4cf; --r3: #5aa6d6; --r4: #2194b8; --r5: #8fb4e8; --r6: #4fb3a9; --r7: #f2b84b;
+}
+
+@layer base {
+  /* Scrollbars in the style of macOS: thin, round, no track, a translucent thumb that gets darker when pointed at. */
+  * { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 30%, transparent) transparent; }
+  @supports selector(::-webkit-scrollbar) {
+    * { scrollbar-width: auto; scrollbar-color: auto; } /* Chrome and Safari take the rules below instead */
+    *::-webkit-scrollbar { width: 14px; height: 14px; background: transparent; }
+    *::-webkit-scrollbar-track { background: transparent; }
+    *::-webkit-scrollbar-corner { background: transparent; }
+    *::-webkit-scrollbar-thumb { border: 4px solid transparent; border-radius: 999px; background: color-mix(in srgb, var(--text) 28%, transparent); background-clip: content-box; min-height: 40px; }
+    *::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 50%, transparent); background-clip: content-box; }
+  }
+  body {
+    margin: 0; min-height: 100vh; padding: 24px 16px 32px;
+    background: var(--page); color: var(--text);
+    font: 16px/1.55 var(--font-sans); -webkit-font-smoothing: antialiased;
+  }
+  /* the colour behind the cards: soft blobs that stay put while the page scrolls */
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(40vmax 40vmax at 10% 5%, var(--blob1), transparent 70%),
+      radial-gradient(35vmax 35vmax at 95% 30%, var(--blob2), transparent 70%),
+      radial-gradient(45vmax 45vmax at 30% 100%, var(--blob3), transparent 70%);
+  }
+  button { margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+  button:focus-visible { outline: 0; box-shadow: 0 0 0 5px color-mix(in srgb, var(--focus) 28%, transparent); } /* keyboard focus: a soft halo, no border */
+  button:disabled { opacity: .4; cursor: default; box-shadow: none; filter: none; }
+  svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+}
+
+/* Like a search page: before the first question only the logo and the box, in the middle of the screen. After it (.asked)
+   they move to the top and shrink, and the answers come in below. */
+.guru { width: 100%; max-width: 840px; margin: 0 auto; min-height: calc(100vh - 150px); min-height: calc(100dvh - 150px); display: flex; flex-direction: column; justify-content: center; }
+.guru.asked { justify-content: flex-start; min-height: 0; }
+.logo { view-transition-name: logo; margin: 0 0 28px; display: flex; align-items: center; justify-content: center; gap: .25em; font-size: 3.2rem; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
+.asked .logo { margin-bottom: 16px; font-size: 1.6rem; }
+.logo a { display: flex; align-items: center; gap: .25em; color: inherit; text-decoration: none; }
+.logo svg { width: 1.4em; height: 1.4em; flex: none; border-radius: 50%; }
+::view-transition-group(*) { animation-duration: .5s; animation-timing-function: cubic-bezier(.2, .8, .2, 1); }
+
+/* the box: the question grows with its text, the settings and send buttons sit inside on the right */
+.ask { view-transition-name: box; position: relative; display: flex; align-items: flex-end; gap: 4px; padding: 6px 6px 6px 22px; border-radius: 28px; background: var(--surface); box-shadow: none; transition: box-shadow .15s; } /* no shadow until it is focused */
+.ask:focus-within { box-shadow: var(--shadow-focus); }
+.ask textarea {
+  flex: 1; min-width: 0; display: block; max-height: 40vh; margin: 0; padding: 9px 0; border: 0; outline: 0; resize: none; overflow-y: auto;
+  background: transparent; color: inherit; font: inherit; line-height: 1.5;
+}
+.ask textarea::placeholder { color: var(--muted); opacity: .7; }
+button.icon { flex: none; width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; color: var(--muted); transition: background .15s; }
+button.icon:hover, button.icon[aria-expanded="true"] { background: var(--line); }
+button.send { background: var(--button); color: var(--button-text); box-shadow: 0 4px 12px rgba(33, 148, 184, .3); transition: transform .12s, filter .15s, opacity .15s; }
+button.send:hover { background: var(--button); filter: brightness(1.08); }
+button.send:active:not(:disabled) { transform: scale(.94); }
+
+.menu-wrap { display: contents; } /* the menu hangs from the whole box, not from the button */
+.menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 10; width: 100%; max-width: 480px; display: grid; gap: 10px; padding: 12px; border-radius: 22px; background: var(--surface); box-shadow: var(--shadow); } /* as wide as the question box, but at most 480px */
+@media (max-width: 600px) { .menu { max-width: none; } } /* on a small screen the menu is as wide as the box */
+.menu hr { width: 100%; margin: 0; border: 0; border-top: 1px solid var(--line); }
+.menu button { font-weight: 600; }
+.segs { display: flex; gap: 8px; } /* theme, language and the two info icons on one line */
+.segs .seg { flex: 1; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 3px; background: var(--line); border-radius: 999px; }
+.seg button { height: 32px; display: grid; place-items: center; border-radius: 999px; color: var(--muted); font-size: .85rem; }
+.seg button svg.i { width: 18px; height: 18px; }
+.seg button[aria-pressed="true"] { background: var(--seg-on); color: var(--text); box-shadow: 0 2px 8px rgba(27, 37, 86, .15); }
+/* an icon on the row of the switchers (privacy policy, disclaimer) */
+.menu .policy-btn { flex: none; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 999px; background: var(--line); color: var(--muted); transition: background .2s, box-shadow .2s; }
+.menu .policy-btn svg.i { width: 18px; height: 18px; }
+.menu .policy-btn:hover { background: var(--seg-on); box-shadow: 0 2px 8px rgba(27, 37, 86, .15); } /* the pill lights up like the active switcher */
+/* the religions are flex items: three on a line (two on a narrow phone), the switch first, then the name */
+.teacher-rows { display: flex; flex-wrap: wrap; gap: 2px 20px; }
+.row { display: flex; align-items: center; justify-content: flex-start; gap: 8px; flex: 0 0 calc((100% - 40px) / 3); min-width: 0; padding: 5px 0; font-size: .8rem; }
+@media (max-width: 520px) { .row { flex-basis: calc((100% - 20px) / 2); } }
+.row > label { cursor: pointer; user-select: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.switch { position: relative; flex: none; width: 46px; height: 28px; border-radius: 999px; background: var(--line); transition: background .2s; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, .2); transition: transform .2s; }
+.switch[aria-checked="true"] { background: #2194b8; }
+.switch[aria-checked="true"]::after { transform: translateX(18px); }
+
+.note { margin: 14px 8px 0; font-size: .9rem; color: var(--muted); text-align: center; }
+.note:empty { display: none; }
+
+/* the privacy policy and the disclaimer */
+dialog.policy { width: min(560px, calc(100vw - 32px)); max-height: min(80vh, 640px); margin: auto; padding: 0; border-radius: 20px; color: var(--text); background: var(--surface); border: 0; box-shadow: 0 8px 24px rgba(0, 0, 0, .18), 0 24px 80px rgba(0, 0, 0, .35); } /* always shadowed; the backdrop is light enough for it to show */
+dialog.policy[open] { display: flex; flex-direction: column; overflow: hidden; } /* the head stays, only the body scrolls */
+dialog.policy::backdrop { background: rgba(10, 27, 34, .28); }
+.policy-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.policy-head h2 { margin: 0; font-size: 1.1rem; }
+.policy-body { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 20px 20px; font-size: .9rem; line-height: 1.55; }
+.policy-body h3 { margin: 18px 0 4px; font-size: .95rem; font-weight: 600; }
+.policy-body p { margin: 0; color: var(--muted); }
+.policy-body p + p { margin-top: 8px; }
+
+/* the answers */
+.answers { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 12px; }
+.answer { --ring: var(--r1); border-radius: 26px; padding: 16px; background: var(--surface); box-shadow: none; transition: box-shadow .2s; } /* the shadow only shows on hover */
+.answer:hover { box-shadow: var(--shadow); }
+/* each teacher's colour as a small glowing dot before the name */
+.answer:nth-child(7n+2) { --ring: var(--r2); }
+.answer:nth-child(7n+3) { --ring: var(--r3); }
+.answer:nth-child(7n+4) { --ring: var(--r4); }
+.answer:nth-child(7n+5) { --ring: var(--r5); }
+.answer:nth-child(7n+6) { --ring: var(--r6); }
+.answer:nth-child(7n+7) { --ring: var(--r7); }
+.answer h2 { margin: 0 0 8px; display: flex; align-items: baseline; gap: 6px; font-size: 1rem; font-weight: 600; }
+.answer h2::before { content: ""; flex: none; align-self: center; width: 10px; height: 10px; border-radius: 50%; background: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 25%, transparent); }
+.answer h2 small { font-weight: 400; font-size: inherit; color: var(--muted); }
+.answer a { color: var(--link); font-weight: 600; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); text-underline-offset: 3px; transition: color .2s; }
+.answer a:hover { color: color-mix(in srgb, var(--link) 65%, #000); } /* only darker, nothing else changes */
+.answer.waiting h2::before { animation: wait 1.4s ease-in-out infinite; }
+.answer p { margin: 0 0 8px; }
+.answer p:last-child { margin-bottom: 0; }
+.answer.waiting .body { color: var(--muted); font-style: italic; }
+.answer.failed .body { color: var(--error); }
+/* a card rises in, one after the other, instead of popping up; its text fades in when the answer arrives */
+.answer { animation: card-in .45s cubic-bezier(.2, .8, .2, 1) backwards; }
+.answer:nth-child(2) { animation-delay: .06s; }
+.answer:nth-child(3) { animation-delay: .12s; }
+.answer:nth-child(4) { animation-delay: .18s; }
+.answer:nth-child(5) { animation-delay: .24s; }
+.answer:nth-child(6) { animation-delay: .3s; }
+.answer:not(.waiting) .body { animation: fade-in .35s ease; }
+@keyframes wait { 50% { opacity: .3; transform: scale(.7); } }
+@keyframes card-in { from { opacity: 0; transform: translateY(12px); } }
+@keyframes fade-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .answer.waiting h2::before, .answer, .answer:not(.waiting) .body { animation: none; } }

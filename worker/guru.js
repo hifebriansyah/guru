@@ -6,7 +6,7 @@
 //               A screener (agents/screener.md) reads the question first and sends one line before the teachers:
 //               Both screener lines also carry "slug", the address of the question (column slug of table answer).
 //               {"id":"screener","religions":["islam",...],"decline":"As {title}, ..."}  the teachers that will answer (the others stay silent), or
-//               {"id":"screener","outOfScope":true,"message":"..."}  when scripture cannot answer it (a price, code, the weather): no teacher is asked.
+//               {"id":"screener","outOfScope":true,"message":"..."}  when no teacher has anything to say about it (a price, code, the weather): no teacher is asked.
 //
 // Settings (worker/guru.jsonc): ALLOWED_ORIGINS, THINKING_LEVEL (or THINKING_BUDGET), MAX_OUTPUT_TOKENS, AXIOM_DATASET, AXIOM_URL, the rate limit LIMITER.
 // Database: D1 binding DB, tables answer and questions (tools/setup_db.py). A teacher's answer is saved once and reused for the same question.
@@ -334,7 +334,7 @@ export default {
         await send({ id: "screener", slug: saved.slug, outOfScope: true, message: saved.screener });
         return;
       }
-      // The screener goes first (one cheap call): it picks the teachers, or says the question is not for holy scripture.
+      // The screener goes first (one cheap call): it picks the teachers, or says the question is not for the teachers.
       const screenTrace = { tries: 0 };
       const t1 = Date.now();
       const verdict = await screen(env, question, screenTrace);
@@ -342,7 +342,7 @@ export default {
         message: verdict.message, error: verdict.error, ...verdict.usage, tries: screenTrace.tries, ms: Date.now() - t1 });
       if (!verdict.error) save(saveVerdict(env, saved, qkey, verdict.religions, verdict.message));  // not when the screener failed: that verdict was only a guess
       if (!verdict.answerable) {
-        await send({ id: "screener", slug: saved.slug, outOfScope: true, message: verdict.message || "This is not something holy scripture speaks to. Try asking about faith, morals or the meaning of life." });
+        await send({ id: "screener", slug: saved.slug, outOfScope: true, message: verdict.message || "This is not something our teachers can speak to. Try asking about faith, morals, everyday life or the meaning of life." });
         return;
       }
       const chosen = new Set(verdict.religions.filter((r) => enabled.has(r)));  // what the screener picked, among the teachers switched on

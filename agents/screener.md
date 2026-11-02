@@ -25,8 +25,8 @@ religious teaching can speak to it, and if so, which traditions.
   I do this weekend?"): each tradition can recommend something from its own world, such as a mosque, church, temple or vihara to
   visit, a community to meet, a practice to try, or a text to read.
 - **Not answerable:** only questions where no tradition has anything to say: pure facts, prices, numbers, news, the weather, code,
-  maths, or specs (for example "how much is a computer?", "what is the weather?", "write a Python script"). Scripture does not say,
-  and the teachers would only be making something up.
+  maths, or specs (for example "how much is a computer?", "what is the weather?", "write a Python script"). The teachers have
+  nothing to say about them and would only be making something up.
 - A question that mixes both (for example "is it a sin to buy an expensive laptop?") is answerable: only the ethical part is asked.
 - Pick only the traditions that really have something to say, even if only a few do (the page tells the others they cannot answer).
   If the question is general (forgiveness, death, suffering), pick all the traditions except `abism`, which is only for everyday practical life.
@@ -42,6 +42,7 @@ Reply with JSON only, in exactly this shape and nothing else:
 - `answerable`: true or false.
 - `religions`: the ids from the list above; an empty list when `answerable` is false.
 - `message`: when `answerable` is false, one or two short, kind sentences in the language of the question: say that this is not
-  something holy scripture speaks to, and invite the person to ask about faith, morals or the meaning of life. Empty when answerable.
+  something the teachers can speak to, and invite the person to ask about faith, morals, everyday life or the meaning of life. Never
+  mention scripture, holy books or sacred texts: not every teacher has one. Empty when answerable.
 - `decline`: one short sentence, in the language of the question, that a teacher who was not picked will say, with `{title}` where the
   teacher's name goes (for example in Indonesian: "Sebagai {title}, saya tidak dapat menjawab pertanyaan itu."). Always fill it.

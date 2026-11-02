@@ -1,6 +1,22 @@
-# Local dev (Apache) only: an address like /for-fun/guru/makan-apa has no file, so it opens the page, which then loads that question.
-# On guru.situs.id GitHub Pages does the same with 404.html (see .github/workflows/pages.yml).
-RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ index.html [L]
+# Local Apache only (GitHub Pages ignores this file, and it is not copied into build/client/).
+# Serves the built site from build/client/ at http://localhost/for-fun/guru/ (build it with `npm run build:local`).
+# Needs mod_rewrite and `AllowOverride FileInfo` (or All) for this folder, like ../abimisme/.htaccess.
+# Always check with the server for a fresh copy while developing (a 304 answer is cheap).
+<IfModule mod_headers.c>
+  Header set Cache-Control "no-cache"
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /for-fun/guru/
+  # / -> the built page
+  RewriteRule ^$ build/client/index.html [L]
+  # a file of the build: assets/, storybook/, abism/, sw.js, the icons, ...
+  RewriteCond %{DOCUMENT_ROOT}/for-fun/guru/build/client/$1 -f
+  RewriteRule ^(.+)$ build/client/$1 [L]
+  # the address of a question (/apa-surga-itu-ada) has no file: the page opens and shows that question itself,
+  # like 404.html does on GitHub Pages
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^([^/]+)$ build/client/404.html [L]
+</IfModule>
