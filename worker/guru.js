@@ -194,7 +194,8 @@ function loadAbism(env) {
     abismIndex = (async () => {
       const base = (env.ABISM_URL || "https://guru.situs.id/abism").replace(/\/$/, "");
       const [kitab, kutipan] = await Promise.all(["kitab.md", "kutipan.md"].map(async (f) => {
-        const res = await fetch(`${base}/${f}`, { cf: { cacheTtl: 3600, cacheEverything: true } });
+        // cached for an hour, but only a good answer: a 404 (the file is not published yet) must not stick. ?v= is bumped to drop what was cached before.
+        const res = await fetch(`${base}/${f}?v=2`, { cf: { cacheEverything: true, cacheTtlByStatus: { "200-299": 3600, "400-599": 0 } } });
         if (!res.ok) throw new Error(`cannot read ${base}/${f}: ${res.status}`);
         return res.text();
       }));
