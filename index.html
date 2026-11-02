@@ -235,10 +235,10 @@
   </dialog>
   <script>
     const WORKER_URL = "https://guru-worker.situs.id";
-    // The order the answers are shown in; the Worker sends each one as soon as it is ready.
+    // The order the answers are shown in (by popularity in Indonesia); the Worker sends each one as soon as it is ready. A 4th item "ism" marks a teaching, not a religion.
     const TEACHERS = [
       ["islam", "Sheikh", "Islam"], ["protestant", "Pastor", "Protestant"], ["catholic", "Father", "Catholic"],
-      ["hinduism", "Acharya", "Hinduism"], ["buddhism", "Bhante", "Buddhism"], ["confucianism", "Laoshi", "Confucianism"], ["abism", "Abi", "Abism"],
+      ["hinduism", "Acharya", "Hinduism"], ["buddhism", "Bhante", "Buddhism"], ["confucianism", "Laoshi", "Confucianism"], ["abism", "Abi", "Abism", "ism"],
     ];
     // The title shown in Indonesian, where it differs from the English one.
     const TITLE_ID = { islam: "Ustadz", protestant: "Pendeta", catholic: "Romo", hinduism: "Acarya" };
@@ -302,7 +302,8 @@
     let lang = store.get("guru-lang") || ((navigator.language || "").toLowerCase().startsWith("id") ? "id" : "en");
     let off = new Set((() => { try { return JSON.parse(store.get("guru-off") || "[]"); } catch { return []; } })());
     // Teachers that start switched off. One that the visitor has never seen (not in guru-known) starts off, also for someone with saved choices.
-    const OFF_AT_FIRST = ["abism"];
+    // Every teaching (an -ism, marked "ism" in TEACHERS) starts off; the religions start on.
+    const OFF_AT_FIRST = TEACHERS.filter((t) => t[3] === "ism").map((t) => t[0]);
     const known = (() => { try { return new Set(JSON.parse(store.get("guru-known") || "[]")); } catch { return new Set(); } })();
     for (const id of OFF_AT_FIRST) if (!known.has(id)) off.add(id);
     store.set("guru-off", JSON.stringify([...off]));
