@@ -1,0 +1,6 @@
+# Local dev (Apache) only: an address like /for-fun/guru/makan-apa has no file, so it opens the page, which then loads that question.
+# On guru.situs.id GitHub Pages does the same with 404.html (see .github/workflows/pages.yml).
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [L]
