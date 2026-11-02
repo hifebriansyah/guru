@@ -53,7 +53,7 @@ async function askModel(env, persona, question) {
   const data = await res.json().catch(() => null);
   const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("").trim();
   const u = data?.usageMetadata || {};
-  const usage = { tokensIn: u.promptTokenCount, tokensOut: u.candidatesTokenCount, tokensThinking: u.thoughtsTokenCount, finish: data?.candidates?.[0]?.finishReason };
+  const usage = { tokensIn: u.promptTokenCount, tokensOut: u.candidatesTokenCount, tokensThinking: u.thoughtsTokenCount, tokensTotal: u.totalTokenCount, finish: data?.candidates?.[0]?.finishReason };
   if (res.ok && text) return { text, usage };
   // Gemini's own reason, plus which quota ran out on a 429 (for example a per-minute limit): it never holds the key.
   const quota = (data?.error?.details || []).flatMap((d) => d.violations || []).map((v) => v.quotaId || v.quotaMetric).filter(Boolean).join(", ");
