@@ -1,0 +1,25 @@
+{
+  // The guru Worker (worker/guru.js): asks every teacher in agents/*.md the same question. Deployed by: python3 tools/deploy_worker.py
+  "name": "guru-worker",
+  "main": "guru.js",
+  "compatibility_date": "2025-09-01",
+  // The public address the page calls (WORKER_URL in index.html). The deploy attaches it and turns the workers.dev address off.
+  "domain": "guru-worker.situs.id",
+  // Google refuses Gemini requests handled in some places (Hong Kong: "User location is not supported"), so run near Singapore.
+  "placement": { "region": "aws:ap-southeast-1" },
+  "vars": {
+    "ALLOWED_ORIGINS": "https://guru.situs.id,http://localhost,https://localhost,http://127.0.0.1",
+    // The model is fixed in guru.js: always gemini-3.8-flash.
+    // "0" turns thinking off: thinking is billed as output and is the biggest hidden cost.
+    "THINKING_BUDGET": "0",
+    "MAX_OUTPUT_TOKENS": "700",
+    // The request log (secret AXIOM_TOKEN, copied from .env by the deploy): this dataset, in the US region.
+    "AXIOM_DATASET": "guru.situs.id",
+    "AXIOM_URL": "https://us-east-1.aws.edge.axiom.co"
+  },
+  // Secret GEMINI_API_KEY: entered in the Cloudflare dashboard (Worker > Settings > Variables and Secrets); deploys keep it.
+  // Each question is 6 Gemini calls, so at most 5 questions a minute from one IP address.
+  "ratelimits": [
+    { "name": "LIMITER", "namespace_id": "2001", "simple": { "limit": 5, "period": 60 } }
+  ]
+}

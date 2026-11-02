@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Guru</title>
+  <meta name="description" content="Ask one question and hear how six religious traditions answer it.">
+  <style>
+    :root {
+      --bg: #f6f3ee; --card: #fffdf9; --text: #2b2723; --muted: #6f675e; --line: #ded6cb;
+      --accent: #7a5c3e; --accent-text: #fff; --error: #a23b2a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #171513; --card: #211e1b; --text: #eee8e1; --muted: #a59c91; --line: #3a352f; --accent: #c9a27c; --accent-text: #1b1714; --error: #e58a78; }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; padding: 48px 16px;
+      background: var(--bg); color: var(--text); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    main { width: 100%; max-width: 680px; margin: 0 auto; }
+    h1 { margin: 0 0 4px; font-size: 1.6rem; }
+    .intro { margin: 0 0 20px; color: var(--muted); }
+    form, .answer { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+    textarea {
+      width: 100%; min-height: 120px; resize: vertical; padding: 12px; border: 1px solid var(--line); border-radius: 10px;
+      background: var(--bg); color: inherit; font: inherit;
+    }
+    textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    button {
+      margin-top: 12px; width: 100%; padding: 12px; border: 0; border-radius: 10px; cursor: pointer;
+      background: var(--accent); color: var(--accent-text); font: inherit; font-weight: 600;
+    }
+    button:disabled { opacity: .5; cursor: default; }
+    .note { margin: 12px 0 0; font-size: .9rem; color: var(--muted); }
+    .note:empty { display: none; }
+    .privacy { margin: 10px 4px 0; font-size: .8rem; color: var(--muted); }
+    .answers { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 12px; }
+    .answer h2 { margin: 0 0 8px; font-size: 1rem; }
+    .answer h2 small { font-weight: 400; color: var(--muted); }
+    .answer p { margin: 0 0 8px; }
+    .answer p:last-child { margin-bottom: 0; }
+    .answer.waiting .body { color: var(--muted); font-style: italic; }
+    .answer.failed .body { color: var(--error); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Guru</h1>
+    <p class="intro">Ask one question and hear how six religious traditions answer it.</p>
+    <form id="ask">
+      <label for="question" hidden>Your question</label>
+      <textarea id="question" name="question" maxlength="500" required placeholder="What does my faith say about forgiveness?"></textarea>
+      <button type="submit" id="send" disabled>Ask</button>
+      <p class="note" id="note" role="status" aria-live="polite"></p>
+    </form>
+    <p class="privacy">Questions and answers are kept in our log to keep the service working well. Please don't include personal details.</p>
+    <ul class="answers" id="answers" aria-live="polite"></ul>
+  </main>
+  <script>
+    const WORKER_URL = "https://guru-worker.situs.id";
+    // The order the answers are shown in; the Worker sends each one as soon as it is ready.
+    const TEACHERS = [
+      ["islam", "Ustadz", "Islam"], ["protestant", "Pastor", "Protestant Christianity"], ["catholic", "Father", "Catholic"],
+      ["hinduism", "Acharya", "Hinduism"], ["buddhism", "Bhante", "Buddhism"], ["confucianism", "Laoshi", "Confucianism"],
+    ];
+
+    const form = document.getElementById("ask");
+    const question = document.getElementById("question");
+    const send = document.getElementById("send");
+    const note = document.getElementById("note");
+    const list = document.getElementById("answers");
+    question.addEventListener("input", () => { send.disabled = !question.value.trim(); });
+
+    // Plain text from the model -> safe HTML: escape everything, then allow **bold**, *italics* and paragraphs.
+    function render(text) {
+      const esc = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      return esc.split(/\n{2,}/).map((p) => "<p>" + p
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\*(.+?)\*/g, "<em>$1</em>").replace(/\n/g, "<br>") + "</p>").join("");
+    }
+
+    function cards() {
+      list.replaceChildren();
+      const byId = {};
+      for (const [id, title, tradition] of TEACHERS) {
+        const li = document.createElement("li");
+        li.className = "answer waiting";
+        const h = document.createElement("h2");
+        h.append(title + " ");
+        const small = document.createElement("small");
+        small.textContent = "· " + tradition;
+        h.append(small);
+        const body = document.createElement("div");
+        body.className = "body";
+        body.textContent = "Thinking…";
+        li.append(h, body);
+        list.append(li);
+        byId[id] = li;
+      }
+      return byId;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const q = question.value.trim();
+      if (!q) return;
+      send.disabled = true;
+      note.textContent = "";
+      const byId = cards();
+      const fill = (line) => {
+        const li = byId[line.id];
+        if (!li) return;
+        const body = li.querySelector(".body");
+        li.classList.remove("waiting");
+        if (line.answer) body.innerHTML = render(line.answer);
+        else { li.classList.add("failed"); body.textContent = "This teacher could not answer right now."; }
+      };
+      try {
+        const res = await fetch(WORKER_URL + "/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q }) });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(res.status === 429 ? "Too many questions. Please wait a minute." : err.error || "Something went wrong.");
+        }
+        const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+        let buffer = "";
+        for (;;) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += value;
+          const lines = buffer.split("\n");
+          buffer = lines.pop();
+          for (const l of lines) if (l.trim()) fill(JSON.parse(l));
+        }
+        if (buffer.trim()) fill(JSON.parse(buffer));
+        for (const li of list.querySelectorAll(".waiting")) fill({ id: Object.keys(byId).find((k) => byId[k] === li) });
+      } catch (err) {
+        list.replaceChildren();
+        note.textContent = err.message || "Something went wrong.";
+      } finally {
+        send.disabled = !question.value.trim();
+      }
+    });
+  </script>
+</body>
+</html>
