@@ -1,7 +1,7 @@
 {
   "name": "Guru",
   "short_name": "Guru",
-  "description": "Ask one question and hear how different religions answer it.",
+  "description": "Ask Gurus Their Perspectives",
   "id": "./",
   "start_url": "./",
   "scope": "./",

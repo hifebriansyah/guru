@@ -8,30 +8,32 @@ import "./styles/app.css";
 
 const BASE = import.meta.env.BASE_URL;
 const SITE = "https://guru.situs.id";
-const DESCRIPTION = "Ask one question and hear how different religions answer it.";
-// The title on a shared link (Open Graph and Twitter), with no description of its own; the browser tab keeps "Guru".
+// One tagline everywhere: the search description, the share title, the share image (tools/make_icons.py), the manifest and the README.
+const TAGLINE = "Ask Gurus Their Perspectives";
 // Cache busting: the file names never change (other sites link to them), a ?v=<hash of the file> does (scripts/asset-version.ts, set in
 // vite.config.ts): a new picture is a new address for Cloudflare and the chat apps, and the old address keeps working.
 const versioned = (name: string): string => `${name}?v=${__ASSET_V__[name]}`;
 const OG_IMAGE = `${SITE}/${versioned("og-image.png")}`;
-const SHARE_TITLE = "Ask Gurus for their perspectives";
+const SHARE_TITLE = "Guru"; // the name on a shared link; the description under it is the tagline
 
 // Dark unless the visitor chose light; set before the first paint, so there is no flash.
 const THEME_SCRIPT = `try{document.documentElement.dataset.theme=localStorage.getItem("guru-theme")==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}`;
 
 export const meta: Route.MetaFunction = () => [
   { title: "Guru" },
-  { name: "description", content: DESCRIPTION },
+  { name: "description", content: TAGLINE },
   { property: "og:type", content: "website" },
   { property: "og:site_name", content: "Guru" },
   { property: "og:title", content: SHARE_TITLE },
+  { property: "og:description", content: TAGLINE },
   { property: "og:url", content: `${SITE}/` },
   { property: "og:image", content: OG_IMAGE },
   { property: "og:image:width", content: "1200" },
   { property: "og:image:height", content: "630" },
-  { property: "og:image:alt", content: "Guru: Ask Gurus for their perspectives." },
+  { property: "og:image:alt", content: `Guru: ${TAGLINE}.` },
   { name: "twitter:card", content: "summary_large_image" },
   { name: "twitter:title", content: SHARE_TITLE },
+  { name: "twitter:description", content: TAGLINE },
   { name: "twitter:image", content: OG_IMAGE },
 ];
 

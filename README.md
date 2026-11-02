@@ -1,6 +1,6 @@
 # Guru
 
-Ask one question and hear how different religions answer it. A React page (the same stack as Omon Omon) and a Cloudflare Worker
+Ask Gurus Their Perspectives. A React page (the same stack as Omon Omon) and a Cloudflare Worker
 that asks Gemini.
 
 - **Page:** React 19, React Router 7 (single-page app), Vite, TypeScript, Tailwind CSS 4, Storybook, and a PWA (manifest, icons,

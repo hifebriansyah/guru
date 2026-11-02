@@ -51,7 +51,7 @@ def draw(size: int, padding: float = 0.0, background: str | None = None) -> Imag
 
 FONT = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
 FONT_TEXT = ("/System/Library/Fonts/HelveticaNeue.ttc", 12)  # Helvetica Neue Thin (face 12 of the collection)
-TAGLINE = ["Ask Gurus", "Their Perspectives"]  # two lines, the first letter of each word in capital
+TAGLINE = ["Ask Gurus", "Their Perspectives"]  # the tagline of the site (app/root.tsx) in two lines
 
 
 TRACKING = 8  # extra pixels between the letters of the tagline

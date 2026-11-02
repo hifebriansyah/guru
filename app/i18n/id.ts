@@ -2,7 +2,7 @@
 import type en from "./en";
 
 const id: { [K in keyof typeof en]: (typeof en)[K] } = {
-  intro: "Ajukan satu pertanyaan dan dengarkan bagaimana berbagai agama menjawabnya.",
+  intro: "Tanya Guru Pendapat Mereka",
   label: "Pertanyaanmu",
   placeholder: "apa surga itu ada?",
   ask: "Tanya",
@@ -21,7 +21,7 @@ const id: { [K in keyof typeof en]: (typeof en)[K] } = {
   dark: "Gelap",
   language: "Bahasa",
   teachers: "Guru",
-  description: "Ajukan satu pertanyaan dan dengarkan bagaimana berbagai agama menjawabnya.",
+  description: "Tanya Guru Pendapat Mereka",
   updateReady: "Versi baru sudah siap.",
   updateNow: "Muat ulang",
   dismiss: "Tutup",

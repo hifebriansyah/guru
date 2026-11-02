@@ -3,7 +3,7 @@
 export type Section = [heading: string, text: string];
 
 const en = {
-  intro: "Ask one question and hear how different religions answer it.",
+  intro: "Ask Gurus Their Perspectives",
   label: "Your question",
   placeholder: "Does heaven exist?",
   ask: "Ask",
@@ -22,7 +22,7 @@ const en = {
   dark: "Dark",
   language: "Language",
   teachers: "Teachers",
-  description: "Ask one question and hear how different religions answer it.",
+  description: "Ask Gurus Their Perspectives",
   updateReady: "A new version is ready.",
   updateNow: "Reload",
   dismiss: "Dismiss",
