@@ -11,15 +11,24 @@
       --accent: #7a5c3e; --accent-text: #fff; --error: #a23b2a;
     }
     @media (prefers-color-scheme: dark) {
-      :root { --bg: #171513; --card: #211e1b; --text: #eee8e1; --muted: #a59c91; --line: #3a352f; --accent: #c9a27c; --accent-text: #1b1714; --error: #e58a78; }
+      :root:not([data-theme="light"]) { --bg: #171513; --card: #211e1b; --text: #eee8e1; --muted: #a59c91; --line: #3a352f; --accent: #c9a27c; --accent-text: #1b1714; --error: #e58a78; }
     }
+    :root[data-theme="dark"] { --bg: #171513; --card: #211e1b; --text: #eee8e1; --muted: #a59c91; --line: #3a352f; --accent: #c9a27c; --accent-text: #1b1714; --error: #e58a78; }
     * { box-sizing: border-box; }
     body {
       margin: 0; min-height: 100vh; padding: 48px 16px;
       background: var(--bg); color: var(--text); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
     }
     main { width: 100%; max-width: 680px; margin: 0 auto; }
-    h1 { margin: 0 0 4px; font-size: 1.6rem; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+    h1 { margin: 0; font-size: 1.6rem; }
+    button.theme {
+      margin: 0; width: 40px; height: 40px; padding: 0; display: grid; place-items: center;
+      background: transparent; color: var(--text); border: 1px solid var(--line); border-radius: 10px;
+    }
+    button.theme svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    button.theme .sun, :root[data-theme="dark"] button.theme .moon { display: none; }
+    :root[data-theme="dark"] button.theme .sun { display: block; }
     .intro { margin: 0 0 20px; color: var(--muted); }
     form, .answer { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
     textarea {
@@ -38,6 +47,7 @@
     .answers { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 12px; }
     .answer h2 { margin: 0 0 8px; font-size: 1rem; }
     .answer h2 small { font-weight: 400; color: var(--muted); }
+    .answer a { color: var(--accent); text-underline-offset: 2px; }
     .answer p { margin: 0 0 8px; }
     .answer p:last-child { margin-bottom: 0; }
     .answer.waiting .body { color: var(--muted); font-style: italic; }
@@ -46,7 +56,13 @@
 </head>
 <body>
   <main>
-    <h1>Guru</h1>
+    <header>
+      <h1>Guru</h1>
+      <button type="button" class="theme" id="theme" aria-label="Switch between light and dark mode">
+        <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+      </button>
+    </header>
     <p class="intro">Ask one question and hear how six religious traditions answer it.</p>
     <form id="ask">
       <label for="question" hidden>Your question</label>
@@ -65,6 +81,16 @@
       ["hinduism", "Acharya", "Hinduism"], ["buddhism", "Bhante", "Buddhism"], ["confucianism", "Laoshi", "Confucianism"],
     ];
 
+    // Light/dark: the saved choice, else the system's; the button flips it and remembers it.
+    const root = document.documentElement;
+    let saved = null;
+    try { saved = localStorage.getItem("guru-theme"); } catch {}
+    root.dataset.theme = saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.getElementById("theme").addEventListener("click", () => {
+      root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+      try { localStorage.setItem("guru-theme", root.dataset.theme); } catch {}
+    });
+
     const form = document.getElementById("ask");
     const question = document.getElementById("question");
     const send = document.getElementById("send");
@@ -72,10 +98,39 @@
     const list = document.getElementById("answers");
     question.addEventListener("input", () => { send.disabled = !question.value.trim(); });
 
-    // Plain text from the model -> safe HTML: escape everything, then allow **bold**, *italics* and paragraphs.
+    // The teachers never write addresses: they write citation tags like [[quran 2:286]] and this builds the link, only when the tag
+    // has exactly the expected shape. Anything else stays plain text, so a made-up reference can never become a made-up link.
+    const SURAH_SLUGS = "al-fatihah al-baqarah ali-imran an-nisa al-maidah al-anam al-araf al-anfal at-taubah yunus hud yusuf ar-rad ibrahim al-hijr an-nahl al-isra al-kahf maryam thaha al-anbiya al-hajj al-muminun an-nur al-furqan asy-syuara an-naml al-qashash al-ankabut ar-rum luqman as-sajdah al-ahzab saba fathir yasin ash-shaffat shad az-zumar ghafir fushshilat asy-syura az-zukhruf ad-dukhan al-jatsiyah al-ahqaf muhammad al-fath al-hujurat qaf adz-dzariyat at-thur an-najm al-qamar ar-rahman al-waqiah al-hadid al-mujadilah al-hasyr al-mumtahanah ash-shaff al-jumuah al-munafiqun at-taghabun at-thalaq at-tahrim al-mulk al-qalam al-haqqah al-maarij nuh al-jinn al-muzzammil al-muddatstsir al-qiyamah al-insan al-mursalat an-naba an-naziat abasa at-takwir al-infithar al-muthaffifin al-insyiqaq al-buruj at-thariq al-ala al-ghasyiyah al-fajr al-balad asy-syams al-lail adh-dhuha al-insyirah at-tin al-alaq al-qadr al-bayyinah az-zalzalah al-adiyat al-qariah at-takatsur al-ashr al-humazah al-fil quraisy al-maun al-kautsar al-kafirun an-nashr al-lahab al-ikhlash al-falaq an-nas".split(" ");
+    const ANALECTS = "xue-er wei-zheng ba-yi li-ren gong-ye-chang yong-ye shu-er tai-bo zi-han xiang-dang xian-jin yan-yuan zi-lu xian-wen wei-ling-gong ji-shi yang-huo wei-zi zi-zhang yao-yue".split(" ");
+    let answerLang = "en";  // "id" or "en", from the screener: the language of the question (Quran pages exist in both)
+    const REFS = {
+      // Quran: our own site, the surah page at the verse
+      quran: (a) => { const m = /^(\d{1,3}):(\d{1,3})(?:[-–]\d{1,3})?$/.exec(a); const s = m && SURAH_SLUGS[m[1] - 1];
+        return s && [`https://quran.situs.id/${answerLang}/${s}#ayat-${m[2]}`, "Quran " + a]; },
+      // Bible (Protestant and Catholic): the passage on BibleGateway, book in English
+      bible: (a) => /^[1-3]? ?[A-Za-z][A-Za-z ]{1,24} \d{1,3}(?::\d{1,3}(?:[-–]\d{1,3})?)?$/.test(a) &&
+        [`https://www.biblegateway.com/passage/?search=${encodeURIComponent(a)}`, a],
+      // Catechism of the Catholic Church paragraph
+      ccc: (a) => /^\d{1,4}$/.test(a) && [`https://www.scborromeo.org/ccc/para/${a}.htm`, "CCC " + a],
+      // Bhagavad Gita chapter.verse
+      gita: (a) => { const m = /^(\d{1,2})\.(\d{1,3})(?:[-–]\d{1,3})?$/.exec(a); return m && [`https://www.holy-bhagavad-gita.org/chapter/${m[1]}/verse/${m[2]}`, "Bhagavad Gita " + a]; },
+      // Pali suttas on SuttaCentral: dn22, mn10, sn56.11, an3.65, snp1.8, ud1.10, iti27
+      sutta: (a) => { const m = /^(dn|mn|sn|an|snp|ud|iti)(\d{1,3}(?:\.\d{1,3})?)$/i.exec(a);
+        return m && [`https://suttacentral.net/${a.toLowerCase()}`, `${m[1].toUpperCase()} ${m[2]}`]; },
+      // Analects book.chapter: the book's page on Chinese Text Project, with the English translation
+      analects: (a) => { const m = /^(\d{1,2})\.\d{1,2}$/.exec(a); const s = m && ANALECTS[m[1] - 1];
+        return s && [`https://ctext.org/analects/${s}/ens`, "Analects " + a]; },
+    };
+    function cite(tag, arg) {
+      const hit = REFS[tag.toLowerCase()]?.(arg.trim());
+      return hit ? `<a href="${hit[0]}" target="_blank" rel="noopener noreferrer">${hit[1]}</a>` : arg.trim();
+    }
+
+    // Plain text from the model -> safe HTML: escape everything, then allow **bold**, *italics*, citation links and paragraphs.
     function render(text) {
       const esc = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       return esc.split(/\n{2,}/).map((p) => "<p>" + p
+        .replace(/\[\[(\w+)\s+([^\]]{1,40})\]\]/g, (_, tag, arg) => cite(tag, arg))
         .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\*(.+?)\*/g, "<em>$1</em>").replace(/\n/g, "<br>") + "</p>").join("");
     }
 
@@ -108,6 +163,23 @@
       note.textContent = "";
       const byId = cards();
       const fill = (line) => {
+        if (line.id === "screener") {
+          if (line.lang === "id") answerLang = "id";
+          else if (line.lang) answerLang = "en";
+          // The screener decides first: keep only the teachers who can answer, or show why none can.
+          if (line.outOfScope) {
+            list.replaceChildren();
+            note.textContent = line.message;
+          } else if (line.religions) {
+            for (const [id, title] of TEACHERS) {
+              if (line.religions.includes(id)) continue;
+              const li = byId[id];
+              li.classList.remove("waiting");
+              li.querySelector(".body").textContent = (line.decline || "As {title}, I can't answer that question.").replace("{title}", title);
+            }
+          }
+          return;
+        }
         const li = byId[line.id];
         if (!li) return;
         const body = li.querySelector(".body");

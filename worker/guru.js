@@ -2,6 +2,9 @@
 //
 //   POST /ask   {"question": "..."}  ->  NDJSON, one line per teacher as it finishes:
 //               {"id":"islam","title":"Ustadz","tradition":"Islam","answer":"..."}   or   {"id":"islam",...,"error":"..."}
+//               A screener (agents/screener.md) reads the question first and sends one line before the teachers:
+//               {"id":"screener","religions":["islam",...],"decline":"As {title}, ...","lang":"id"}  the teachers that will answer (the others stay silent), or
+//               {"id":"screener","outOfScope":true,"message":"..."}  when scripture cannot answer it (a price, code, the weather): no teacher is asked.
 //
 // Settings (worker/guru.jsonc): ALLOWED_ORIGINS, THINKING_BUDGET, MAX_OUTPUT_TOKENS, AXIOM_DATASET, AXIOM_URL, the rate limit LIMITER.
 // Secrets: GEMINI_API_KEY, entered in the Cloudflare dashboard (deploys keep it); AXIOM_TOKEN, copied from .env by the deploy.
@@ -12,12 +15,23 @@
 
 // Filled in by tools/deploy_worker.py from agents/*.md: [{id, title, tradition, prompt}]
 const PERSONAS = __PERSONAS__;
+// Filled in from agents/screener.md: the prompt of the screener, who decides which teachers a question goes to (or none).
+const SCREENER = __SCREENER__;
 
 const QUESTION_MAX = 500;
 const LENGTH_RULE = "Keep the answer under 200 words: a short, warm answer the person can read on a phone. Plain paragraphs; you may use " +
-  "*italics* and **bold**, but no headings, lists of more than three items, or tables.";
+  "*italics* and **bold**, but no headings, lists of more than three items, or tables. This is a single answer, not a conversation: never ask the " +
+  "person a question, never offer more help, and never invite a follow-up (no \"would you like...\", \"feel free to ask\", \"tell me more\"). End with the answer itself.";
 
-const MODEL = "gemini-3.8-flash";  // always this model: no fallback to another one
+// How a teacher cites. The page (index.html, REFS) turns each tag into a link only when it has exactly this shape; a model never writes an address.
+const CITE_RULE = "When you cite a text, write the reference as a tag in double square brackets, exactly in one of these forms, and never write any web address: " +
+  "[[quran 2:286]] (surah:verse); [[bible Matthew 5:44]] (English book name, chapter:verse); [[ccc 1234]] (Catechism of the Catholic Church paragraph); " +
+  "[[gita 2.47]] (Bhagavad Gita chapter.verse); [[sutta mn10]] or [[sutta an3.65]] (only dn, mn, sn, an, snp, ud, iti, written like these, no spaces); " +
+  "[[analects 4.15]] (book.chapter). Use a tag only for one single reference you are sure of. For any other text (Vedas, Upanishads, Dhammapada, Mencius, hadith and so on) " +
+  "just name it in plain words, with no tag.";
+
+const MODEL = "gemini-3.8-flash";  // the teachers always use this model: no fallback to another one
+const SCREENER_MODEL = "gemini-3.5-flash-lite";  // the screener only sorts a question into JSON, so a cheaper model is enough
 
 function logLine(env, ctx, event) {
   if (!env.AXIOM_TOKEN) return;
@@ -39,14 +53,14 @@ function generationConfig(env) {
   return config;
 }
 
-async function askModel(env, persona, question) {
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+async function askModel(env, persona, question, config = generationConfig(env), model = MODEL) {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
     body: JSON.stringify({
-      system_instruction: { parts: [{ text: `${persona.prompt}\n\n${LENGTH_RULE}` }] },
+      system_instruction: { parts: [{ text: persona.prompt }] },
       contents: [{ role: "user", parts: [{ text: question }] }],
-      generationConfig: generationConfig(env),
+      generationConfig: config,
     }),
     signal: AbortSignal.timeout(25000),
   });
@@ -60,12 +74,29 @@ async function askModel(env, persona, question) {
   throw new GeminiError(res.ok ? "no answer" : `Gemini ${res.status}${quota ? ` [${quota}]` : ""}${data?.error?.message ? `: ${data.error.message}` : ""}`, res.status);
 }
 
+// The screener reads the question first: {answerable, religions: [ids], message, decline, lang}. If it fails or answers nonsense, every teacher is asked,
+// so a broken screener never blocks a real question.
+async function screen(env, question, trace) {
+  const config = { maxOutputTokens: 300, temperature: 0, responseMimeType: "application/json" };  // no thinkingConfig: the lite model refuses it
+  try {
+    const { text, usage } = await askOne(env, { prompt: SCREENER }, question, trace, config, SCREENER_MODEL);
+    const verdict = JSON.parse(text);
+    const ids = new Set(PERSONAS.map((p) => p.id));
+    const religions = Array.isArray(verdict.religions) ? verdict.religions.filter((r) => ids.has(r)) : [];
+    if (typeof verdict.answerable !== "boolean") throw new Error("bad verdict");
+    if (verdict.answerable && !religions.length) throw new Error("no religion chosen");
+    return { answerable: verdict.answerable, religions, message: String(verdict.message || "").slice(0, 400), decline: String(verdict.decline || "").slice(0, 200), lang: verdict.lang === "id" ? "id" : "en", usage };
+  } catch (err) {
+    return { answerable: true, religions: PERSONAS.map((p) => p.id), message: "", error: String(err.message || err).slice(0, 300) };
+  }
+}
+
 // When Gemini is busy (503) or a per-minute quota is hit (429), wait a moment and ask the same model again (twice at most).
-async function askOne(env, persona, question, trace) {
+async function askOne(env, persona, question, trace, config, model) {
   for (let attempt = 1; ; attempt++) {
     trace.tries = attempt;
     try {
-      return await askModel(env, persona, question);
+      return await askModel(env, persona, question, config, model);
     } catch (err) {
       if (attempt >= 3 || !/Gemini (429|503)/.test(String(err.message))) throw err;
       await new Promise((r) => setTimeout(r, attempt * 1500 + Math.random() * 1000));
@@ -112,16 +143,31 @@ export default {
     const writer = writable.getWriter();
     const encoder = new TextEncoder();
     const send = (obj) => writer.write(encoder.encode(`${JSON.stringify(obj)}\n`));
-    const asked = crypto.randomUUID();  // ties the six lines of one question together in the log
+    const asked = crypto.randomUUID();  // ties the lines of one question together in the log
     const sent = { model: MODEL, ...generationConfig(env) };
-    const all = PERSONAS.map(async (p) => {
+    const run = async () => {
+      // The screener goes first (one cheap call): it picks the teachers, or says the question is not for holy scripture.
+      const screenTrace = { tries: 0 };
+      const t1 = Date.now();
+      const verdict = await screen(env, question, screenTrace);
+      logLine(env, ctx, { ...who, kind: "screener", asked, question, model: SCREENER_MODEL, answerable: verdict.answerable, religions: verdict.religions.join(","),
+        message: verdict.message, error: verdict.error, ...verdict.usage, tries: screenTrace.tries, ms: Date.now() - t1 });
+      if (!verdict.answerable) {
+        await send({ id: "screener", outOfScope: true, message: verdict.message || "This is not something holy scripture speaks to. Try asking about faith, morals or the meaning of life." });
+        return;
+      }
+      const chosen = new Set(verdict.religions);
+      await send({ id: "screener", religions: verdict.religions, decline: verdict.decline, lang: verdict.lang });
+      await Promise.all(PERSONAS.filter((p) => chosen.has(p.id)).map((p) => ask(p)));
+    };
+    const ask = async (p) => {
       const head = { id: p.id, title: p.title, tradition: p.tradition };
       const trace = { tries: 0 };
       const t0 = Date.now();
       const line = { ...who, kind: "teacher", asked, teacher: p.id, question, model: sent.model, maxOutputTokens: sent.maxOutputTokens,
         thinkingBudget: sent.thinkingConfig?.thinkingBudget };
       try {
-        const { text, usage } = await askOne(env, p, question, trace);
+        const { text, usage } = await askOne(env, { prompt: `${p.prompt}\n\n${LENGTH_RULE}\n\n${CITE_RULE}` }, question, trace);
         logLine(env, ctx, { ...line, status: 200, answer: text, ...usage, tries: trace.tries, ms: Date.now() - t0 });
         await send({ ...head, answer: text });
       } catch (err) {
@@ -129,8 +175,8 @@ export default {
         logLine(env, ctx, { ...line, status: err.status || 504, error, tries: trace.tries, ms: Date.now() - t0 });
         await send({ ...head, error });
       }
-    });
-    ctx.waitUntil(Promise.all(all).finally(() => writer.close()));
+    };
+    ctx.waitUntil(run().catch(() => {}).finally(() => writer.close()));
     return new Response(readable, { headers: { ...cors, "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store" } });
   },
 };

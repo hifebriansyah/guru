@@ -3,7 +3,7 @@
 
     python3 tools/deploy_worker.py
 
-Reads worker/guru.jsonc and worker/guru.js, puts the teachers from agents/*.md into the code, uploads it, attaches
+Reads worker/guru.jsonc and worker/guru.js, puts the teachers from agents/*.md (and the screener, agents/screener.md) into the code, uploads it, attaches
 guru-worker.situs.id and turns the workers.dev address off. Needs CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID, from .env
 here, ../.env or ../chat-learning/.env (the values are never printed). AXIOM_TOKEN (the request log) is copied to the Worker from
 the same files. GEMINI_API_KEY is entered in the Cloudflare dashboard; deploys keep it.
@@ -18,6 +18,7 @@ import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+SCREENER_FILE = "screener.md"  # in agents/, but it sorts the questions instead of answering them
 BASE = os.environ.get("CLOUDFLARE_API_BASE", "https://api.cloudflare.com/client/v4")
 
 
@@ -41,6 +42,8 @@ def personas():
     """agents/<id>.md -> {id, title, tradition, prompt}. The first line is '# <Title>: <Tradition> master'."""
     out = []
     for f in sorted((ROOT / "agents").glob("*.md")):
+        if f.name == SCREENER_FILE:  # the screener is not a teacher
+            continue
         text = f.read_text(encoding="utf-8").strip()
         m = re.match(r"#\s*(.+?):\s*(.+?)\s+master\s*$", text.splitlines()[0])
         if not m:
@@ -78,6 +81,9 @@ def main():
     if "__PERSONAS__" not in code:
         sys.exit("worker code has no __PERSONAS__ placeholder")
     code = code.replace("__PERSONAS__", json.dumps(teachers, ensure_ascii=False), 1)
+    if "__SCREENER__" not in code:
+        sys.exit("worker code has no __SCREENER__ placeholder")
+    code = code.replace("__SCREENER__", json.dumps((ROOT / "agents" / SCREENER_FILE).read_text(encoding="utf-8").strip(), ensure_ascii=False), 1)
 
     bindings = [{"type": "ratelimit", "name": r["name"], "namespace_id": r["namespace_id"], "simple": r["simple"]} for r in cfg.get("ratelimits", [])]
     bindings += [{"type": "plain_text", "name": k, "text": v} for k, v in cfg.get("vars", {}).items()]

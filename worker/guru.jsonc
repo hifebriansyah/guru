@@ -18,7 +18,7 @@
     "AXIOM_URL": "https://us-east-1.aws.edge.axiom.co"
   },
   // Secret GEMINI_API_KEY: entered in the Cloudflare dashboard (Worker > Settings > Variables and Secrets); deploys keep it.
-  // Each question is 6 Gemini calls, so at most 5 questions a minute from one IP address.
+  // Each question is one screener call plus up to 6 teacher calls, so at most 5 questions a minute from one IP address.
   "ratelimits": [
     { "name": "LIMITER", "namespace_id": "2001", "simple": { "limit": 5, "period": 60 } }
   ]
