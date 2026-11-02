@@ -50,7 +50,7 @@ def draw(size: int, padding: float = 0.0, background: str | None = None) -> Imag
 
 FONT = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
 FONT_TEXT = "/System/Library/Fonts/Supplemental/Arial.ttf"
-TAGLINE = ["ASK GURUS", "FOR THEIR PERSPECTIVES"]  # the share title (app/root.tsx) in two lines, all capitals
+TAGLINE = ["ASK GURUS", "THEIR PERSPECTIVES"]  # two lines, all capitals
 
 
 def og_image() -> Image.Image:
