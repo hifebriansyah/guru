@@ -3,6 +3,9 @@ import { I18nextProvider } from "react-i18next";
 import type { Route } from "./+types/root";
 import { Logo } from "./components/Logo";
 import { UpdatePrompt } from "./features/pwa/UpdatePrompt";
+import appleTouchIcon from "./assets/apple-touch-icon.png?url";
+import favicon from "./assets/favicon.png?url";
+import ogImage from "./assets/og-image.png?url";
 import { i18n } from "./i18n";
 import "./styles/app.css";
 
@@ -10,6 +13,8 @@ const BASE = import.meta.env.BASE_URL;
 const SITE = "https://guru.situs.id";
 const DESCRIPTION = "Ask one question and hear how different religions answer it.";
 // The title on a shared link (Open Graph and Twitter), with no description of its own; the browser tab keeps "Guru".
+// The share image has a hash of its content in its name (Vite), so a new picture is a new address and no cache keeps the old one.
+const OG_IMAGE = new URL(ogImage, SITE).href;
 const SHARE_TITLE = "Ask Gurus for their perspectives";
 
 // Dark unless the visitor chose light; set before the first paint, so there is no flash.
@@ -22,18 +27,18 @@ export const meta: Route.MetaFunction = () => [
   { property: "og:site_name", content: "Guru" },
   { property: "og:title", content: SHARE_TITLE },
   { property: "og:url", content: `${SITE}/` },
-  { property: "og:image", content: `${SITE}/og-image.png` },
+  { property: "og:image", content: OG_IMAGE },
   { property: "og:image:width", content: "1200" },
   { property: "og:image:height", content: "630" },
   { property: "og:image:alt", content: "Guru: Ask Gurus for their perspectives." },
   { name: "twitter:card", content: "summary_large_image" },
   { name: "twitter:title", content: SHARE_TITLE },
-  { name: "twitter:image", content: `${SITE}/og-image.png` },
+  { name: "twitter:image", content: OG_IMAGE },
 ];
 
 export const links: Route.LinksFunction = () => [
-  { rel: "icon", href: `${BASE}favicon.png`, type: "image/png" },
-  { rel: "apple-touch-icon", href: `${BASE}apple-touch-icon.png` },
+  { rel: "icon", href: favicon, type: "image/png" },
+  { rel: "apple-touch-icon", href: appleTouchIcon },
   { rel: "manifest", href: `${BASE}manifest.webmanifest` },
   { rel: "canonical", href: `${SITE}/` },
 ];
