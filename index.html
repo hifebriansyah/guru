@@ -27,6 +27,16 @@
       --r1: #aad9e9; --r2: #77c4cf; --r3: #5aa6d6; --r4: #2194b8; --r5: #8fb4e8; --r6: #4fb3a9;
     }
     * { box-sizing: border-box; }
+    /* Scrollbars in the style of macOS: thin, round, no track, a translucent thumb that gets darker when pointed at. */
+    * { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 30%, transparent) transparent; }
+    @supports selector(::-webkit-scrollbar) {
+      * { scrollbar-width: auto; scrollbar-color: auto; }  /* Chrome and Safari take the rules below instead */
+      *::-webkit-scrollbar { width: 14px; height: 14px; background: transparent; }
+      *::-webkit-scrollbar-track { background: transparent; }
+      *::-webkit-scrollbar-corner { background: transparent; }
+      *::-webkit-scrollbar-thumb { border: 4px solid transparent; border-radius: 999px; background: color-mix(in srgb, var(--text) 28%, transparent); background-clip: content-box; min-height: 40px; }
+      *::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 50%, transparent); background-clip: content-box; }
+    }
     body {
       margin: 0; min-height: 100vh; padding: 24px 16px 32px;
       background: var(--page); color: var(--text);
@@ -107,11 +117,12 @@
     .note:empty { display: none; }
     .menu .policy-btn { width: 100%; padding: 8px 2px 4px; text-align: left; font-size: .85rem; color: var(--muted); transition: color .2s; }
     .menu .policy-btn:hover { color: color-mix(in srgb, var(--muted) 65%, #000); }
-    dialog.policy { width: min(560px, calc(100vw - 32px)); max-height: min(80vh, 640px); padding: 0; border-radius: 20px; color: var(--text); background: var(--surface); border: 0; box-shadow: var(--shadow), 0 20px 60px rgba(0, 0, 0, .3); }
-    dialog.policy::backdrop { background: rgba(10, 27, 34, .5); }
-    .policy-head { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; background: var(--surface); border-bottom: 1px solid var(--line); }
+    dialog.policy { width: min(560px, calc(100vw - 32px)); max-height: min(80vh, 640px); padding: 0; border-radius: 20px; color: var(--text); background: var(--surface); border: 0; box-shadow: 0 8px 24px rgba(0, 0, 0, .18), 0 24px 80px rgba(0, 0, 0, .35); }  /* always shadowed; the backdrop is light enough for it to show */
+    dialog.policy[open] { display: flex; flex-direction: column; overflow: hidden; }  /* the head stays, only the body scrolls */
+    dialog.policy::backdrop { background: rgba(10, 27, 34, .28); }
+    .policy-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; background: var(--surface); border-bottom: 1px solid var(--line); }
     .policy-head h2 { margin: 0; font-size: 1.1rem; }
-    .policy-body { padding: 4px 20px 20px; font-size: .9rem; line-height: 1.55; }
+    .policy-body { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 20px 20px; font-size: .9rem; line-height: 1.55; }
     .policy-body h3 { margin: 18px 0 4px; font-size: .95rem; }
     .policy-body p { margin: 0; color: var(--muted); }
     .answers { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 12px; }
