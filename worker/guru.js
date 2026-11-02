@@ -30,7 +30,7 @@ const LENGTH_RULE = "Keep the answer under 200 words: a short, warm answer the p
 const CITE_RULE = "When you cite a text, write the reference as a tag in double square brackets, exactly in one of these forms, and never write any web address: " +
   "[[quran 2:286]] (surah:verse); [[bible Matthew 5:44]] (English book name, chapter:verse); [[ccc 1234]] (Catechism of the Catholic Church paragraph); " +
   "[[gita 2.47]] (Bhagavad Gita chapter.verse); [[sutta mn10]] or [[sutta an3.65]] (only dn, mn, sn, an, snp, ud, iti, written like these, no spaces); " +
-  "[[analects 4.15]] (book.chapter). Use a tag only for one single reference you are sure of. For any other text (Vedas, Upanishads, Dhammapada, Mencius, hadith and so on) " +
+  "[[analects 4.15]] (book.chapter); [[abism 1:3:5]] (Kitab Nasihat Bapak Bapak jilid:bab:bait, only for Abi and only a saying you were given). Use a tag only for one single reference you are sure of. For any other text (Vedas, Upanishads, Dhammapada, Mencius, hadith and so on) " +
   "just name it in plain words, with no tag.";
 
 const MODEL = "gemini-3.8-flash";  // the teachers always use this model: no fallback to another one
@@ -182,6 +182,75 @@ async function ensureSlug(env, row, key) {
   }
 }
 
+// Abi (agents/abism.md) answers from the Kitab Nasihat Bapak Bapak, which is read from the published page: ABISM_URL/kitab.md (four-part
+// lines "1:3:5:2 text": jilid:bab:bait:baris) and ABISM_URL/kutipan.md (the same bait in plain words, "1:3:5 text"). The Kitab is too big to send
+// with every question, so for each question the sayings that match it best are looked up and sent along with it.
+const STOP = new Set("yang dan di ke dari untuk dengan pada itu ini atau juga akan sudah saya aku kamu kita mereka apa bagaimana kenapa mengapa adalah ada the and for you what how why are is my should can".split(" "));
+const words = (text) => text.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().split(/[^a-z]+/).filter((w) => w.length >= 3 && !STOP.has(w));
+let abismIndex = null;  // one read per Worker instance
+
+function loadAbism(env) {
+  if (!abismIndex) {
+    abismIndex = (async () => {
+      const base = (env.ABISM_URL || "https://guru.situs.id/abism").replace(/\/$/, "");
+      const [kitab, kutipan] = await Promise.all(["kitab.md", "kutipan.md"].map(async (f) => {
+        const res = await fetch(`${base}/${f}`, { cf: { cacheTtl: 3600, cacheEverything: true } });
+        if (!res.ok) throw new Error(`cannot read ${base}/${f}: ${res.status}`);
+        return res.text();
+      }));
+      const verses = new Map();  // "1:3:5" -> {id, bab, plain, poem[]}
+      const get = (id) => { if (!verses.has(id)) verses.set(id, { id, bab: "", plain: "", poem: [] }); return verses.get(id); };
+      let bab = "";
+      for (const line of kutipan.split("\n")) {
+        const b = /^Bab \d+: (.+)$/.exec(line.trim()), m = /^(\d+:\d+:\d+) (.+)$/.exec(line.trim());
+        if (b) bab = b[1];
+        else if (m) Object.assign(get(m[1]), { bab, plain: m[2] });
+      }
+      for (const line of kitab.split("\n")) {
+        const m = /^(\d+:\d+:\d+):\d+ (.+)$/.exec(line.trim());
+        if (m) get(m[1]).poem.push(m[2]);
+      }
+      const docs = [...verses.values()].map((v) => ({ ...v, tokens: [...new Set(words(`${v.bab} ${v.plain} ${v.poem.join(" ")}`))] }));
+      if (!docs.length) throw new Error("the Kitab has no verses");
+      return docs;
+    })();
+    abismIndex.catch(() => { abismIndex = null; });  // read it again next time
+  }
+  return abismIndex;
+}
+
+// A keyword matches a word that is the same, or that starts with it (Indonesian affixes: "sabar" finds "bersabar", "kesabaran").
+const hits = (token, keyword) => token === keyword || (keyword.length >= 4 && (token.startsWith(keyword) || token.endsWith(keyword) || (token.length >= 4 && keyword.startsWith(token))));
+
+function searchAbism(docs, keywords, limit = 6) {
+  const found = [...new Set(keywords)].map((k) => ({ k, docs: docs.filter((d) => d.tokens.some((t) => hits(t, k))) })).filter((x) => x.docs.length);
+  const score = new Map();
+  for (const { k, docs: matching } of found) {
+    const idf = Math.log(1 + docs.length / (1 + matching.length));  // a rare word counts for more
+    for (const d of matching) score.set(d, (score.get(d) || 0) + idf);
+  }
+  const ranked = [...score].sort((a, b) => b[1] - a[1]);
+  return ranked.filter(([, n]) => n >= ranked[0][1] * 0.45).slice(0, limit).map(([d]) => d);  // not the weak matches
+}
+
+// What Abi receives: the question plus the best matching sayings. A cheap call first turns the question (in any language) into Indonesian
+// search words; if that fails, the words of the question itself are used.
+async function abismInput(env, ctx, who, asked, question) {
+  const docs = await loadAbism(env);
+  let keywords = words(question);
+  try {
+    const config = { maxOutputTokens: 200, temperature: 0, responseMimeType: "application/json" };
+    const { text } = await askOne(env, { prompt: "You help search a book of everyday advice from Indonesian fathers (roads, money, home, health, sleep, tools, neighbours, patience). " +
+      "Given the user's question in any language, reply with JSON only: {\"keywords\": [8 to 12 Indonesian words or word stems that sayings answering it would likely contain]}." }, question, { tries: 0 }, config, SCREENER_MODEL);
+    const more = JSON.parse(text).keywords;
+    if (Array.isArray(more)) keywords = [...keywords, ...more.flatMap((k) => words(String(k)))];
+  } catch {}
+  const top = searchAbism(docs, keywords);
+  logLine(env, ctx, { ...who, kind: "abism", asked, question, keywords: [...new Set(keywords)].join(","), verses: top.map((d) => d.id).join(",") });
+  const list = top.map((d) => `[${d.id}] (${d.bab})\n${d.plain}\n${d.poem.join(" / ")}`).join("\n\n");
+  return `${question}\n\nSayings from the Kitab (cite only these, with their numbers):\n${list || "(no saying matched this question)"}`;
+}
+
 // When Gemini is busy (503) or a per-minute quota is hit (429), wait a moment and ask the same model again (twice at most).
 async function askOne(env, persona, question, trace, config, model) {
   for (let attempt = 1; ; attempt++) {
@@ -291,7 +360,8 @@ export default {
       const line = { ...who, kind: "teacher", asked, teacher: p.id, question, model: sent.model, maxOutputTokens: sent.maxOutputTokens,
         thinkingBudget: sent.thinkingConfig?.thinkingBudget, thinkingLevel: sent.thinkingConfig?.thinkingLevel };
       try {
-        const { text, usage } = await askOne(env, { prompt: `${p.prompt}\n\n${LENGTH_RULE}\n\n${CITE_RULE}` }, question, trace);
+        const input = p.id === "abism" ? await abismInput(env, ctx, who, asked, question) : question;  // Abi gets the sayings that match
+        const { text, usage } = await askOne(env, { prompt: `${p.prompt}\n\n${LENGTH_RULE}\n\n${CITE_RULE}` }, input, trace);
         logLine(env, ctx, { ...line, status: 200, answer: text, ...usage, tries: trace.tries, ms: Date.now() - t0 });
         save(saveAnswer(env, saved, qkey, p.id, text));
         await send({ ...head, answer: text });

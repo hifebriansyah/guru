@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Collect the site
-        run: mkdir _site && cp index.html _site/ && cp index.html _site/404.html  # an address like /apa-surga-itu-ada has no file, so Pages serves 404.html: the same page, which then opens that question
+        run: mkdir _site && cp index.html _site/ && cp -r abism _site/abism && cp index.html _site/404.html  # an address like /apa-surga-itu-ada has no file, so Pages serves 404.html: the same page, which then opens that question
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

@@ -15,6 +15,8 @@
     // "0" turns thinking off: thinking is billed as output and is the biggest hidden cost.
     "THINKING_BUDGET": "0",
     "MAX_OUTPUT_TOKENS": "700",
+    // Where Abi (agents/abism.md) reads the Kitab from: abism/kitab.md and abism/kutipan.md, published with the page.
+    "ABISM_URL": "https://guru.situs.id/abism",
     // The request log (secret AXIOM_TOKEN, copied from .env by the deploy): this dataset, in the US region.
     "AXIOM_DATASET": "guru.situs.id",
     "AXIOM_URL": "https://us-east-1.aws.edge.axiom.co"

@@ -11,6 +11,8 @@ religious teaching can speak to it, and if so, which traditions.
 - `hinduism`: Hinduism (Vedas, Upanishads, Gita)
 - `buddhism`: Buddhism (Pali Canon and Mahayana sutras)
 - `confucianism`: Confucianism (Analects, Mencius, the Classics)
+- `abism`: Abimisme, the playful everyday wisdom of Indonesian fathers (*Kitab Nasihat Bapak Bapak*): road manners and safety, money and
+  household habits, health and sleep, tools and repairs, neighbours, patience. It is the natural pick for small practical daily-life questions.
 
 ## How you decide
 - **Answerable:** questions about faith, God, morality, ethics, the meaning of life, suffering, death, family, work as a calling, money
@@ -27,7 +29,7 @@ religious teaching can speak to it, and if so, which traditions.
   and the teachers would only be making something up.
 - A question that mixes both (for example "is it a sin to buy an expensive laptop?") is answerable: only the ethical part is asked.
 - Pick only the traditions that really have something to say, even if only a few do (the page tells the others they cannot answer).
-  If the question is general (forgiveness, death, suffering), pick all six.
+  If the question is general (forgiveness, death, suffering), pick all the traditions except `abism`, which is only for everyday practical life.
   If it names a tradition or one of its own terms (for example "what is zakat?", "what is the Trinity?"), pick only that tradition
   (Catholic and Protestant both for shared Christian topics).
 - Greetings and nonsense are not answerable.
