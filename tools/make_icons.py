@@ -16,8 +16,8 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
-RINGS = [(21.24, 5.52, "#4f8fcb"), (16.05, 4.86, "#77c4cf"), (10.1, 7.1, "#cfeaf3")]  # radius, thickness, colour (viewBox 48)
-BAR = (23.1, 24.33, 8.0, 3.02, "#cfeaf3")  # the same colour as the inner ring, so the bar of the G is one piece with it
+RINGS = [(21.24, 5.52, "#4f8fcb"), (16.05, 4.86, "#77c4cf"), (10.1, 7.1, "#a3d6e7")]  # radius, thickness, colour (viewBox 48)
+BAR = (23.1, 24.33, 8.0, 3.02, "#a3d6e7")  # the same colour as the inner ring, so the bar of the G is one piece with it
 CUT = [(24, 24), (48, 8.5), (48, 24.33), (24, 24.33)]  # the part of the rings that is cut away
 PAGE = "#0a1b22"  # the dark page colour behind the icons
 SS = 8  # supersampling, for smooth edges
